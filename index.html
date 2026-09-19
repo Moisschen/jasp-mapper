@@ -45,7 +45,7 @@
   #dot { position: absolute; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); left: 53px; top: 53px; z-index: 1; }
   #live { color: var(--muted); font-size: 13px; }
   #live.cal { color: var(--warn); font-weight: 600; }
-  .pad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .pad { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
   .hint { color: var(--muted); font-size: 13px; margin: 10px 0 0; }
   .nosupport { border-color: var(--bad); }
   [hidden] { display: none !important; }
@@ -104,7 +104,7 @@
   <div class="card" id="steamCard">
     <h2>Steam-Einrichtung (nur Controller-Modus)</h2>
     <div class="pad" id="pad"></div>
-    <p class="hint">Den Knopf klicken, den Steam gerade verlangt. Nicht vorhandene Knöpfe einem freien (14–16) zuordnen.</p>
+    <p class="hint">Den Knopf klicken, den Steam gerade verlangt. Alle anderen Knöpfe in Steam überspringen.</p>
   </div>
 </main>
 
@@ -120,8 +120,8 @@ Object.assign(KEYS, {
 for (let i = 1; i <= 12; i++) KEYS['F' + i] = 193 + i;
 const NAME_BY_CODE = Object.fromEntries(Object.entries(KEYS).map(([n, c]) => [c, n]));
 const SLOTS = ['Stick hoch', 'Stick runter', 'Stick links', 'Stick rechts', 'Stick-Klick'];
-const PAD = ['A', 'B', 'X', 'Y', 'LB', 'RB', 'LT', 'RT', 'Back', 'Start', 'L3', 'R3', 'Guide', '14', '15', '16',
-             'Stick ←', 'Stick →', 'Stick ↑', 'Stick ↓'];
+// [label, BTN number]; Steam lets you skip every other button.
+const PAD = [['A', 1], ['B', 2], ['Stick ←', 17], ['Stick →', 18], ['Stick ↑', 19], ['Stick ↓', 20]];
 // 1209 = own "Jasp Stick" ID, 2341 = older Arduino firmware
 const FILTERS = [{ usbVendorId: 0x1209 }, { usbVendorId: 0x2341 }];
 
@@ -139,9 +139,9 @@ for (let i = 0; i < 5; i++) {
   const ind = document.createElement('span'); ind.className = 'ind'; ind.textContent = '–';
   $('keys').append(label, sel, ind); selects.push(sel); indicators.push(ind);
 }
-PAD.forEach((name, i) => {
+PAD.forEach(([name, number]) => {
   const b = document.createElement('button'); b.textContent = name; b.disabled = true;
-  b.onclick = () => command('BTN ' + (i + 1));
+  b.onclick = () => command('BTN ' + number);
   $('pad').append(b);
 });
 
