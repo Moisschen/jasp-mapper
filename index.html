@@ -48,6 +48,11 @@
   .pad { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
   .hint { color: var(--muted); font-size: 13px; margin: 10px 0 0; }
   .nosupport { border-color: var(--bad); }
+  .steps { padding-left: 0; list-style: none; margin: 12px 0; display: grid; gap: 12px; }
+  .steps li { display: grid; gap: 4px; justify-items: start; }
+  .steps .hint { margin: 0; }
+  progress { width: 100%; height: 10px; margin-top: 4px; accent-color: var(--accent); }
+  #fwStatus.ok { color: var(--ok); font-weight: 600; } #fwStatus.bad { color: var(--bad); font-weight: 600; }
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -107,6 +112,19 @@
       </div>
       <p class="hint">Dreht den Stick, falls er schief sitzt: Stick gerade nach oben drücken und so lange schieben, bis der Punkt genau oben steht. Wird sofort gespeichert.</p>
     </div>
+  </div>
+
+  <div class="card">
+    <h2>Neuen Stick einrichten / Firmware aktualisieren</h2>
+    <p class="hint" style="margin-top:0">Spielt die Jasp-Firmware auf einen Pro Micro (Arduino-Bootloader nötig – bei gekauften Pro Micros ist der drauf).</p>
+    <ol class="steps">
+      <li><button id="fwReset">1. Stick neu starten</button>
+        <span class="hint">Im Fenster den Stick wählen (z.&nbsp;B. „Arduino Leonardo“, „Jasp Stick“, „Serielles USB-Gerät“). Steht dort nichts: <b>RST zweimal schnell an GND tippen</b> und gleich Schritt 2.</span></li>
+      <li><button id="fwFlash" class="primary">2. Firmware aufspielen</button>
+        <span class="hint">Innerhalb von <b>8 Sekunden</b> den Stick im Fenster wählen (heißt jetzt oft anders, z.&nbsp;B. „Arduino Leonardo bootloader“ oder „Serielles USB-Gerät“).</span></li>
+    </ol>
+    <progress id="fwProgress" max="1" value="0" hidden></progress>
+    <div id="fwStatus" class="hint"></div>
   </div>
 
   <div class="card" id="steamCard">
@@ -288,8 +306,129 @@ $('modeBtn').onclick = async () => {
   await disconnect('Stick startet neu – gleich auf „Verbinden“ klicken');
 };
 
+// ---- Firmware flashing (Caterina bootloader, AVR109 protocol – same as avrdude -c avr109) ----
+function fwStatus(text, cls) { $('fwStatus').textContent = text; $('fwStatus').className = 'hint ' + (cls || ''); }
+
+function parseHex(text) {
+  const image = new Uint8Array(32768).fill(0xFF);
+  let base = 0, end = 0;
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line.startsWith(':')) continue;
+    const bytes = line.slice(1).match(/../g).map((h) => parseInt(h, 16));
+    const sum = bytes.reduce((a, b) => a + b, 0) & 0xFF;
+    if (sum !== 0) throw new Error('Firmware-Datei beschädigt (Prüfsumme)');
+    const [len, hi, lo, type] = bytes;
+    const data = bytes.slice(4, 4 + len);
+    if (type === 0) {
+      const addr = base + (hi << 8 | lo);
+      image.set(data, addr);
+      end = Math.max(end, addr + len);
+    } else if (type === 2) base = (data[0] << 8 | data[1]) << 4;
+    else if (type === 4) base = (data[0] << 8 | data[1]) << 16;
+    else if (type === 1) break;
+  }
+  if (end > 28672) throw new Error('Firmware zu groß für den Bootloader-Bereich');
+  return image.slice(0, (end + 127) & ~127);  // whole 128-byte pages
+}
+
+// Byte-level reader with timeout for the bootloader's replies.
+function byteReader(serial) {
+  const r = serial.readable.getReader();
+  let buf = [];
+  let pending = null;  // keep one outstanding read so a timeout never drops bytes
+  return {
+    async read(n, ms = 2000) {
+      const deadline = Date.now() + ms;
+      while (buf.length < n) {
+        const left = deadline - Date.now();
+        if (left <= 0) throw new Error('Bootloader antwortet nicht');
+        pending = pending || r.read();
+        const res = await Promise.race([pending, new Promise((ok) => setTimeout(() => ok({ timeout: true }), left))]);
+        if (res.timeout) continue;
+        pending = null;
+        if (res.done) throw new Error('Verbindung abgebrochen');
+        buf.push(...res.value);
+      }
+      const out = buf.slice(0, n); buf = buf.slice(n); return out;
+    },
+    async release() { try { await r.cancel(); } catch {} try { r.releaseLock(); } catch {} },
+  };
+}
+
+// Step 1: opening the running sketch's port at 1200 baud makes it jump into the bootloader.
+$('fwReset').onclick = async () => {
+  if (port) await disconnect();
+  try {
+    const target = await navigator.serial.requestPort();
+    await target.open({ baudRate: 1200 });
+    await target.setSignals({ dataTerminalReady: false });
+    await target.close();
+    fwStatus('Stick startet in den Bootloader – jetzt Schritt 2 (innerhalb von 8 Sekunden).');
+  } catch (e) {
+    if (e.name !== 'NotFoundError') fwStatus('Neustart fehlgeschlagen: ' + e.message + ' – dann RST zweimal an GND tippen und Schritt 2.', 'bad');
+  }
+};
+
+$('fwFlash').onclick = async () => {
+  if (port) await disconnect();
+  let image;
+  try {
+    image = parseHex(await (await fetch('firmware.hex', { cache: 'no-store' })).text());
+  } catch (e) { return fwStatus('Firmware konnte nicht geladen werden: ' + e.message, 'bad'); }
+
+  let target, rd, wr;
+  try {
+    target = await navigator.serial.requestPort();
+    await target.open({ baudRate: 57600 });
+    rd = byteReader(target); wr = target.writable.getWriter();
+    const send = (bytes) => wr.write(new Uint8Array(bytes));
+    const expectCR = async (what) => { const [b] = await rd.read(1); if (b !== 13) throw new Error(what + ' abgelehnt'); };
+
+    await send([0x53]);  // 'S' – programmer id, 7 chars ("CATERIN")
+    const id = String.fromCharCode(...await rd.read(7));
+    if (!/CATERIN|AVRBOOT|LUFA/i.test(id)) throw new Error('Kein Arduino-Bootloader gefunden (Antwort: ' + id + ')');
+
+    $('fwProgress').hidden = false; $('fwProgress').value = 0;
+    fwStatus('Lösche…');
+    await send([0x65]); await expectCR('Löschen');  // 'e' chip erase
+
+    const PAGE = 128;
+    const total = image.length / PAGE;
+    await send([0x41, 0, 0]); await expectCR('Adresse');  // 'A' word address 0
+    for (let p = 0; p < total; p++) {
+      const chunk = image.slice(p * PAGE, (p + 1) * PAGE);
+      await send([0x42, 0, PAGE, 0x46, ...chunk]); await expectCR('Schreiben');  // 'B' size 'F' data
+      $('fwProgress').value = (p + 1) / total / 2;
+      fwStatus(`Schreibe… ${Math.round((p + 1) / total * 100)} %`);
+    }
+
+    fwStatus('Prüfe…');
+    await send([0x41, 0, 0]); await expectCR('Adresse');
+    for (let p = 0; p < total; p++) {
+      await send([0x67, 0, PAGE, 0x46]);  // 'g' read block
+      const back = await rd.read(PAGE);
+      for (let i = 0; i < PAGE; i++) {
+        if (back[i] !== image[p * PAGE + i]) throw new Error(`Prüfung fehlgeschlagen bei Byte ${p * PAGE + i}`);
+      }
+      $('fwProgress').value = 0.5 + (p + 1) / total / 2;
+    }
+
+    await send([0x45]); await expectCR('Beenden');  // 'E' leave bootloader, start firmware
+    fwStatus(`Fertig – ${image.length} Bytes aufgespielt und geprüft. In ein paar Sekunden oben auf „Verbinden“ und einmal kalibrieren.`, 'ok');
+  } catch (e) {
+    if (e.name === 'NotFoundError') fwStatus('Kein Gerät gewählt.', 'bad');
+    else fwStatus('Fehlgeschlagen: ' + e.message + '. Zu spät gewählt? Dann Schritt 1 wiederholen bzw. RST zweimal an GND tippen.', 'bad');
+  } finally {
+    try { rd && await rd.release(); } catch {}
+    try { wr && wr.releaseLock(); } catch {}
+    try { target && await target.close(); } catch {}
+  }
+};
+
 if (!('serial' in navigator)) {
   $('nosupport').hidden = false; $('connect').disabled = true;
+  $('fwReset').disabled = $('fwFlash').disabled = true;
 }
 navigator.serial?.addEventListener('disconnect', (e) => { if (e.target === port) disconnect('Stick abgesteckt'); });
 </script>
