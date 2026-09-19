@@ -129,7 +129,11 @@
 
   <div class="card">
     <h2>Neuen Stick einrichten / Firmware aktualisieren</h2>
-    <p class="hint" style="margin-top:0">Spielt die Jasp-Firmware auf einen Pro Micro (Arduino-Bootloader nötig – bei gekauften Pro Micros ist der drauf).</p>
+    <div class="row">
+      <button id="fwUpdate" class="primary" disabled>Firmware aktualisieren</button>
+      <span class="hint grow" style="margin:0">Für einen verbundenen Stick – ein Klick, Einstellungen bleiben erhalten.</span>
+    </div>
+    <p class="hint">Neuer Stick oder Update klappt nicht? Dann manuell (Arduino-Bootloader nötig – bei gekauften Pro Micros ist der drauf):</p>
     <ol class="steps">
       <li><button id="fwReset">1. Stick neu starten</button>
         <span class="hint">Im Fenster den Stick wählen (z.&nbsp;B. „Arduino Leonardo“, „Jasp Stick“, „Serielles USB-Gerät“). Steht dort nichts: <b>RST zweimal schnell an GND tippen</b> und gleich Schritt 2.</span></li>
@@ -282,6 +286,7 @@ function showMode(m) {
   for (const el of [...selects, $('thresh'), $('save'), $('defaults')]) el.disabled = !keyboard;
   $('cal').disabled = !connected;
   $('diagBtn').disabled = !connected;
+  $('fwUpdate').disabled = !connected;
   if (!connected) $('rot').disabled = $('rotReset').disabled = true;
   $('pad').querySelectorAll('button').forEach((b) => (b.disabled = !(connected && m === 1)));
   $('modeBtn').disabled = !(connected && (m === 0 || m === 1));
@@ -493,7 +498,36 @@ $('fwReset').onclick = async () => {
   }
 };
 
-$('fwFlash').onclick = async () => {
+$('fwFlash').onclick = () => flashFirmware(() => navigator.serial.requestPort());
+
+// Bootloader IDs: Arduino Leonardo/Micro (2341:0036/0037), SparkFun Pro Micro (1B4F:9203/9205).
+const BOOTLOADER_IDS = [[0x2341, 0x0036], [0x2341, 0x0037], [0x1B4F, 0x9203], [0x1B4F, 0x9205]];
+const isBootloader = (p) => BOOTLOADER_IDS.some(([v, d]) => p.getInfo().usbVendorId === v && p.getInfo().usbProductId === d);
+
+// One click: reset the connected stick into its bootloader, then flash. A bootloader port that
+// was allowed before is picked up automatically; otherwise the browser asks once.
+$('fwUpdate').onclick = async () => {
+  const running = port;
+  if (!running) return;
+  await disconnect('Update läuft…');
+  try {
+    await running.open({ baudRate: 1200 });
+    await running.setSignals({ dataTerminalReady: false });
+    await running.close();
+  } catch (e) { return fwStatus('Neustart fehlgeschlagen: ' + e.message, 'bad'); }
+  fwStatus('Stick startet in den Bootloader…');
+  await flashFirmware(async () => {
+    for (let i = 0; i < 12; i++) {
+      await new Promise((r) => setTimeout(r, 250));
+      const known = (await navigator.serial.getPorts()).find(isBootloader);
+      if (known) return known;
+    }
+    fwStatus('Bitte den Stick im Fenster wählen (heißt jetzt z. B. „Arduino Leonardo bootloader“).');
+    return navigator.serial.requestPort();
+  });
+};
+
+async function flashFirmware(pickPort) {
   if (port) await disconnect();
   let image;
   try {
@@ -502,7 +536,7 @@ $('fwFlash').onclick = async () => {
 
   let target, rd, wr;
   try {
-    target = await navigator.serial.requestPort();
+    target = await pickPort();
     await target.open({ baudRate: 57600 });
     rd = byteReader(target); wr = target.writable.getWriter();
     const send = (bytes) => wr.write(new Uint8Array(bytes));
@@ -547,7 +581,7 @@ $('fwFlash').onclick = async () => {
     try { wr && wr.releaseLock(); } catch {}
     try { target && await target.close(); } catch {}
   }
-};
+}
 
 if (!('serial' in navigator)) {
   $('nosupport').hidden = false; $('connect').disabled = true;
