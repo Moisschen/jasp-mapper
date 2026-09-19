@@ -99,6 +99,14 @@
       </div>
     </div>
     <p class="hint">Stick loslassen → „Kalibrieren“ → Stick mehrmals ganz außen im Kreis drehen → „Fertig“.</p>
+    <div style="margin-top:14px">
+      <label for="rot" id="rotLabel">Stickwinkel</label>
+      <div class="row">
+        <input type="range" id="rot" class="grow" min="-90" max="90" step="1" value="0" disabled>
+        <button id="rotReset" disabled>0°</button>
+      </div>
+      <p class="hint">Dreht den Stick, falls er schief sitzt: Stick gerade nach oben drücken und so lange schieben, bis der Punkt genau oben steht. Wird sofort gespeichert.</p>
+    </div>
   </div>
 
   <div class="card" id="steamCard">
@@ -146,6 +154,13 @@ PAD.forEach(([name, number]) => {
 });
 
 function setStatus(text, ok) { $('status').textContent = text; $('status').className = (ok ? 'ok' : 'bad') + ' grow'; }
+function updateRotLabel() {
+  const v = Number($('rot').value);
+  $('rotLabel').textContent = `Stickwinkel: ${v > 0 ? '+' : ''}${v}° ${v > 0 ? '(im Uhrzeigersinn)' : v < 0 ? '(gegen Uhrzeigersinn)' : ''}`;
+}
+$('rot').oninput = updateRotLabel; updateRotLabel();
+$('rot').onchange = () => command('ROT ' + $('rot').value);
+$('rotReset').onclick = () => { $('rot').value = 0; updateRotLabel(); command('ROT 0'); };
 function updateThreshLabel() { $('threshLabel').textContent = `Auslösepunkt: ${$('thresh').value} % Stickweg`; }
 $('thresh').oninput = updateThreshLabel; updateThreshLabel();
 
@@ -221,6 +236,10 @@ async function loadConfig() {
     for (let i = 0; i < 5; i++) if (NAME_BY_CODE[parts[i + 1]]) selects[i].value = parts[i + 1];
     $('thresh').value = parts[6]; updateThreshLabel();
   }
+  const rot = await command('ROT');
+  const hasRot = !!rot && rot.startsWith('ROT ');
+  if (hasRot) { $('rot').value = rot.slice(4); updateRotLabel(); }
+  $('rot').disabled = $('rotReset').disabled = !hasRot;
   const m = await command('MODE');
   showMode(m && m.startsWith('MODE ') ? Number(m.slice(5)) : (port ? -1 : null));
 }
@@ -231,6 +250,7 @@ function showMode(m) {
   const keyboard = connected && m !== 1;
   for (const el of [...selects, $('thresh'), $('save'), $('defaults')]) el.disabled = !keyboard;
   $('cal').disabled = !connected;
+  if (!connected) $('rot').disabled = $('rotReset').disabled = true;
   $('pad').querySelectorAll('button').forEach((b) => (b.disabled = !(connected && m === 1)));
   $('modeBtn').disabled = !(connected && (m === 0 || m === 1));
   $('modeLabel').textContent = !connected ? '–' : m === 1 ? 'Controller (Gamepad)' : m === 0 ? 'Tastatur' : 'unbekannt (alte Firmware)';
