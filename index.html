@@ -62,107 +62,257 @@
 </head>
 <body>
 <main>
-  <h1>Jasp-Mapper</h1>
-  <p class="sub">Belegung, Kalibrierung und Modus des Jasp-Sticks ändern, direkt im Browser.</p>
+  <div class="row"><h1 class="grow">Jasp-Mapper</h1><button id="langBtn" title="Sprache / Language">EN</button></div>
+  <p class="sub" data-i18n="sub"></p>
 
-  <div class="card nosupport" id="nosupport" hidden>
-    Dieser Browser kann nicht mit USB-Geräten sprechen. Bitte <b>Chrome</b> oder <b>Edge</b> am PC verwenden.
-  </div>
+  <div class="card nosupport" id="nosupport" hidden data-i18n="nosupport"></div>
 
   <div class="card">
     <div class="row">
-      <span id="status" class="bad grow">Nicht verbunden</span>
-      <button id="connect" class="primary">Verbinden</button>
+      <span id="status" class="bad grow"></span>
+      <button id="connect" class="primary"></button>
     </div>
   </div>
 
   <div class="card">
-    <h2>Modus</h2>
+    <h2 data-i18n="hMode"></h2>
     <div class="row">
       <span id="modeLabel" class="grow">–</span>
-      <button id="modeBtn" disabled>Umschalten</button>
+      <button id="modeBtn" disabled></button>
     </div>
-    <p class="hint">Tastatur: Spiele sehen nur Tasten (z.&nbsp;B. für Fortnite). Controller: Analog-Stick + Knopf, in Steam als Xbox-Controller nutzbar. Beim Umschalten startet der Stick neu – danach einmal neu verbinden.</p>
+    <p class="hint" data-i18n="modeHint"></p>
   </div>
 
   <div class="card" id="keyCard">
-    <h2>Tasten</h2>
+    <h2 data-i18n="hKeys"></h2>
     <div class="keys" id="keys"></div>
     <div style="margin-top:14px">
-      <label for="thresh" id="threshLabel">Auslösepunkt</label>
+      <label for="thresh" id="threshLabel"></label>
       <input type="range" id="thresh" min="20" max="95" step="5" value="50">
     </div>
     <div class="row" style="margin-top:10px">
-      <button id="save" class="primary" disabled>Speichern</button>
-      <button id="defaults" disabled>Standard (WASD)</button>
+      <button id="save" class="primary" disabled data-i18n="save"></button>
+      <button id="defaults" disabled data-i18n="defaults"></button>
     </div>
   </div>
 
   <div class="card">
-    <h2>Stick &amp; Kalibrierung</h2>
+    <h2 data-i18n="hStick"></h2>
     <div class="row">
       <div class="stick"><div id="dot"></div></div>
       <div class="grow">
         <div id="live">–</div>
-        <button id="cal" style="margin-top:10px" disabled>Kalibrieren</button>
+        <button id="cal" style="margin-top:10px" disabled></button>
       </div>
     </div>
-    <p class="hint">Stick loslassen → „Kalibrieren“ → Stick mehrmals ganz außen im Kreis drehen → „Fertig“.</p>
+    <p class="hint" data-i18n="calHint"></p>
     <div style="margin-top:14px">
-      <label for="rot" id="rotLabel">Stickwinkel</label>
+      <label for="rot" id="rotLabel"></label>
       <div class="row">
         <input type="range" id="rot" class="grow" min="-90" max="90" step="1" value="0" disabled>
         <button id="rotReset" disabled>0°</button>
       </div>
-      <p class="hint">Dreht den Stick, falls er schief sitzt: Stick gerade nach oben drücken und so lange schieben, bis der Punkt genau oben steht. Wird sofort gespeichert.</p>
+      <p class="hint" data-i18n="rotHint"></p>
     </div>
   </div>
 
   <div class="card">
-    <h2>Verdrahtungs-Check</h2>
-    <div id="diagStep" class="hint" style="margin-top:0">Prüft Stick-Achsen und Klick auf typische Verdrahtungsfehler. Stick vorher verbinden.</div>
+    <h2 data-i18n="hDiag"></h2>
+    <div id="diagStep" class="hint" style="margin-top:0" data-i18n="diagIntro"></div>
     <div class="row" style="margin-top:10px">
-      <button id="diagBtn" disabled>Check starten</button>
+      <button id="diagBtn" disabled data-i18n="diagStart"></button>
     </div>
     <ul id="diagResult" class="diag"></ul>
   </div>
 
   <div class="card">
-    <h2>Neuen Stick einrichten / Firmware aktualisieren</h2>
+    <h2 data-i18n="hFw"></h2>
     <div class="row">
-      <button id="fwUpdate" class="primary" disabled>Firmware aktualisieren</button>
-      <span class="hint grow" style="margin:0">Für einen verbundenen Stick – ein Klick, Einstellungen bleiben erhalten.</span>
+      <button id="fwUpdate" class="primary" disabled data-i18n="fwUpdate"></button>
+      <span class="hint grow" style="margin:0" data-i18n="fwUpdateHint"></span>
     </div>
-    <p class="hint">Neuer Stick oder Update klappt nicht? Dann manuell (Arduino-Bootloader nötig – bei gekauften Pro Micros ist der drauf):</p>
+    <p class="hint" data-i18n="fwManual"></p>
     <ol class="steps">
-      <li><button id="fwReset">1. Stick neu starten</button>
-        <span class="hint">Im Fenster den Stick wählen (z.&nbsp;B. „Arduino Leonardo“, „Jasp Stick“, „Serielles USB-Gerät“). Steht dort nichts: <b>RST zweimal schnell an GND tippen</b> und gleich Schritt 2.</span></li>
-      <li><button id="fwFlash" class="primary">2. Firmware aufspielen</button>
-        <span class="hint">Innerhalb von <b>8 Sekunden</b> den Stick im Fenster wählen (heißt jetzt oft anders, z.&nbsp;B. „Arduino Leonardo bootloader“ oder „Serielles USB-Gerät“).</span></li>
+      <li><button id="fwReset" data-i18n="fwReset"></button>
+        <span class="hint" data-i18n="fwResetHint"></span></li>
+      <li><button id="fwFlash" class="primary" data-i18n="fwFlash"></button>
+        <span class="hint" data-i18n="fwFlashHint"></span></li>
     </ol>
     <progress id="fwProgress" max="1" value="0" hidden></progress>
     <div id="fwStatus" class="hint"></div>
   </div>
 
   <div class="card" id="steamCard">
-    <h2>Steam-Einrichtung (nur Controller-Modus)</h2>
+    <h2 data-i18n="hSteam"></h2>
     <div class="pad" id="pad"></div>
-    <p class="hint">Den Knopf klicken, den Steam gerade verlangt. Alle anderen Knöpfe in Steam überspringen.</p>
+    <p class="hint" data-i18n="steamHint"></p>
   </div>
 </main>
 
 <script>
-const KEYS = {};
-for (const c of 'abcdefghijklmnopqrstuvwxyz') KEYS[c.toUpperCase()] = c.charCodeAt(0);
-for (const c of '0123456789') KEYS[c] = c.charCodeAt(0);
-Object.assign(KEYS, {
-  'Leertaste': 32, 'Shift links': 129, 'Shift rechts': 133, 'Strg links': 128, 'Strg rechts': 132,
-  'Alt links': 130, 'Tab': 179, 'Enter': 176, 'Esc': 177, 'Backspace': 178,
-  'Pfeil hoch': 218, 'Pfeil runter': 217, 'Pfeil links': 216, 'Pfeil rechts': 215,
-});
-for (let i = 1; i <= 12; i++) KEYS['F' + i] = 193 + i;
-const NAME_BY_CODE = Object.fromEntries(Object.entries(KEYS).map(([n, c]) => [c, n]));
-const SLOTS = ['Stick hoch', 'Stick runter', 'Stick links', 'Stick rechts', 'Stick-Klick'];
+// ---- Texts (German / English) ----
+const STR = {
+  de: {
+    sub: 'Belegung, Kalibrierung und Modus des Jasp-Sticks ändern, direkt im Browser.',
+    nosupport: 'Dieser Browser kann nicht mit USB-Geräten sprechen. Bitte <b>Chrome</b> oder <b>Edge</b> am PC verwenden.',
+    connect: 'Verbinden', disconnect: 'Trennen', notConnected: 'Nicht verbunden', connected: 'Verbunden',
+    connectFailed: (m) => `Verbinden fehlgeschlagen – ist der Jasp-Mapper noch offen? (${m})`,
+    connLost: 'Verbindung getrennt', unplugged: 'Stick abgesteckt',
+    hMode: 'Modus', modeHint: 'Tastatur: Spiele sehen nur Tasten (z.&nbsp;B. für Fortnite). Controller: Analog-Stick + Knopf, in Steam als Xbox-Controller nutzbar. Beim Umschalten startet der Stick neu – danach einmal neu verbinden.',
+    modeGamepad: 'Controller (Gamepad)', modeKeyboard: 'Tastatur', modeUnknown: 'unbekannt (alte Firmware)',
+    toKeyboard: 'Zu Tastatur wechseln', toGamepad: 'Zu Controller wechseln',
+    rebooting: 'Stick startet neu – gleich auf „Verbinden“ klicken',
+    hKeys: 'Tasten', slots: ['Stick hoch', 'Stick runter', 'Stick links', 'Stick rechts', 'Stick-Klick'],
+    thresh: (v) => `Auslösepunkt: ${v} % Stickweg`, save: 'Speichern', defaults: 'Standard (WASD)',
+    saved: 'Gespeichert – bleibt auch nach dem Abstecken', saveFailed: 'Speichern fehlgeschlagen', restored: 'Standard wiederhergestellt',
+    pressed: 'gedrückt',
+    keyNames: { 32: 'Leertaste', 129: 'Shift links', 133: 'Shift rechts', 128: 'Strg links', 132: 'Strg rechts', 130: 'Alt links',
+      179: 'Tab', 176: 'Enter', 177: 'Esc', 178: 'Rücktaste', 218: 'Pfeil hoch', 217: 'Pfeil runter', 216: 'Pfeil links', 215: 'Pfeil rechts' },
+    hStick: 'Stick & Kalibrierung', cal: 'Kalibrieren', calDone: 'Fertig',
+    calHint: 'Stick loslassen → „Kalibrieren“ → Stick mehrmals ganz außen im Kreis drehen → „Fertig“.',
+    calRunning: 'KALIBRIERUNG LÄUFT – Stick jetzt außen kreisen',
+    live: (rx, ry, x, y) => `Roh X=${rx} Y=${ry} · Richtung X=${x} % Y=${y} %`,
+    rot: (v) => `Stickwinkel: ${v > 0 ? '+' : ''}${v}°${v > 0 ? ' (im Uhrzeigersinn)' : v < 0 ? ' (gegen Uhrzeigersinn)' : ''}`,
+    rotHint: 'Dreht den Stick, falls er schief sitzt: Stick gerade nach oben drücken und so lange schieben, bis der Punkt genau oben steht. Wird sofort gespeichert.',
+    hDiag: 'Verdrahtungs-Check', diagIntro: 'Prüft Stick-Achsen und Klick auf typische Verdrahtungsfehler. Stick vorher verbinden.',
+    diagStart: 'Check starten', next: 'Weiter', measuring: 'Messe…',
+    diag1: 'Schritt 1/4: Stick loslassen und nicht berühren, dann „Weiter“.',
+    diag2: 'Schritt 2/4: Stick nach RECHTS bis zum Anschlag halten und „Weiter“ klicken (weiter halten, bis „Messe…“ weg ist).',
+    diag2m: 'Messe… Stick weiter rechts halten',
+    diag3: 'Schritt 3/4: Stick nach OBEN bis zum Anschlag halten und „Weiter“ klicken.', diag3m: 'Messe… Stick weiter oben halten',
+    diag4: 'Schritt 4/4: Stick REINDRÜCKEN und gedrückt halten, dann „Weiter“.', diag4m: 'Messe… weiter gedrückt halten',
+    axisX: 'X-Achse (VRx)', axisY: 'Y-Achse (VRy)', dirRight: 'Stick rechts', dirUp: 'Stick oben',
+    dLow: (n) => `${n}: Wert fast 0 – Signal hängt an GND, oder VCC am Stick fehlt.`,
+    dHigh: (n) => `${n}: Wert fast Maximum – Signal hängt an VCC, oder GND am Stick fehlt.`,
+    dNoisy: (n, s) => `${n}: Wert springt stark (±${s}) – Signalkabel fehlt/lose oder GND/VCC am Stick lose.`,
+    dOffCenter: (n, a) => `${n}: Mitte liegt weit außen (${a} von 1023) – einmal kalibrieren.`,
+    dRestOk: (n, a, s) => `${n}: Ruheposition sauber (${a}, Rauschen ±${s}).`,
+    dClickStuck: (pin) => `Klick meldet „gedrückt“, obwohl losgelassen – SW (Pin ${pin}) hat Kontakt zu GND.`,
+    dPinGnd: (pin) => `Pin ${pin} liegt dauerhaft an GND – da steckt vermutlich ein Kabel falsch.`,
+    dNoMove: (n) => `${n}: keine Bewegung erkannt. VCC- oder GND-Kabel zum Stick prüfen (oder Stick nicht bis zum Anschlag gedrückt).`,
+    dDirOk: (n, pin) => `${n}: kommt richtig an ${pin} an.`,
+    dSkew: (n) => `${n}: die andere Achse bewegt sich deutlich mit – Stick sitzt schief. Mit dem Stickwinkel ausgleichen.`,
+    dSwapped: (n, got, want) => `${n} kommt an ${got} statt ${want} an: VRx und VRy sind vertauscht.`,
+    dWrongPin: (n, got, want) => `${n} kommt an ${got} an – das Kabel gehört an ${want}.`,
+    dClickOk: (pin) => `Klick: kommt richtig an (Pin ${pin}).`,
+    dClickWrong: (pins) => `Klick kommt an Pin ${pins} an – das SW-Kabel gehört an Pin 14 oder 16.`,
+    dClickNone: 'Klick nicht erkannt – SW-Kabel oder GND zum Stick fehlt.',
+    dSummaryBad: (n) => `${n} Problem(e) gefunden:`, dSummaryOk: 'Alles richtig verdrahtet.',
+    dAborted: (m) => 'Check abgebrochen: ' + m,
+    hFw: 'Neuen Stick einrichten / Firmware aktualisieren', fwUpdate: 'Firmware aktualisieren',
+    fwUpdateHint: 'Für einen verbundenen Stick – ein Klick, Einstellungen bleiben erhalten.',
+    fwManual: 'Neuer Stick oder Update klappt nicht? Dann manuell (Arduino-Bootloader nötig – bei gekauften Pro Micros ist der drauf):',
+    fwReset: '1. Stick neu starten',
+    fwResetHint: 'Im Fenster den Stick wählen (z.&nbsp;B. „Arduino Leonardo“, „Jasp Stick“, „Serielles USB-Gerät“). Steht dort nichts: <b>RST zweimal schnell an GND tippen</b> und gleich Schritt 2.',
+    fwFlash: '2. Firmware aufspielen',
+    fwFlashHint: 'Innerhalb von <b>8 Sekunden</b> den Stick im Fenster wählen (heißt jetzt oft anders, z.&nbsp;B. „Arduino Leonardo bootloader“ oder „Serielles USB-Gerät“).',
+    fwToBoot: 'Stick startet in den Bootloader – jetzt Schritt 2 (innerhalb von 8 Sekunden).',
+    fwResetFailed: (m) => `Neustart fehlgeschlagen: ${m} – dann RST zweimal an GND tippen und Schritt 2.`,
+    fwUpdating: 'Update läuft…', fwBooting: 'Stick startet in den Bootloader…',
+    fwPick: 'Bitte den Stick im Fenster wählen (heißt jetzt z. B. „Arduino Leonardo bootloader“).',
+    fwLoadFailed: (m) => 'Firmware konnte nicht geladen werden: ' + m,
+    fwErasing: 'Lösche…', fwWriting: (p) => `Schreibe… ${p} %`, fwVerifying: 'Prüfe…',
+    fwDone: (n) => `Fertig – ${n} Bytes aufgespielt und geprüft. In ein paar Sekunden oben auf „Verbinden“ und einmal kalibrieren.`,
+    fwNoDevice: 'Kein Gerät gewählt.',
+    fwFailed: (m) => `Fehlgeschlagen: ${m}. Zu spät gewählt? Dann Schritt 1 wiederholen bzw. RST zweimal an GND tippen.`,
+    eChecksum: 'Firmware-Datei beschädigt (Prüfsumme)', eTooBig: 'Firmware zu groß für den Bootloader-Bereich',
+    eNoReply: 'Bootloader antwortet nicht', eAborted: 'Verbindung abgebrochen',
+    eNoBootloader: (id) => `Kein Arduino-Bootloader gefunden (Antwort: ${id})`, eRejected: (w) => `${w} abgelehnt`,
+    eVerify: (b) => `Prüfung fehlgeschlagen bei Byte ${b}`,
+    stepErase: 'Löschen', stepAddress: 'Adresse', stepWrite: 'Schreiben', stepExit: 'Beenden',
+    hSteam: 'Steam-Einrichtung (nur Controller-Modus)',
+    steamHint: 'Den Knopf klicken, den Steam gerade verlangt. Alle anderen Knöpfe in Steam überspringen.',
+  },
+  en: {
+    sub: 'Change key mapping, calibration and mode of the Jasp stick, right in your browser.',
+    nosupport: 'This browser can’t talk to USB devices. Please use <b>Chrome</b> or <b>Edge</b> on a PC.',
+    connect: 'Connect', disconnect: 'Disconnect', notConnected: 'Not connected', connected: 'Connected',
+    connectFailed: (m) => `Connecting failed – is the desktop Jasp-Mapper still open? (${m})`,
+    connLost: 'Connection lost', unplugged: 'Stick unplugged',
+    hMode: 'Mode', modeHint: 'Keyboard: games only see keys (e.g. for Fortnite). Controller: analog stick + button, usable as an Xbox controller through Steam. Switching restarts the stick – reconnect afterwards.',
+    modeGamepad: 'Controller (gamepad)', modeKeyboard: 'Keyboard', modeUnknown: 'unknown (old firmware)',
+    toKeyboard: 'Switch to keyboard', toGamepad: 'Switch to controller',
+    rebooting: 'Stick is restarting – click “Connect” in a moment',
+    hKeys: 'Keys', slots: ['Stick up', 'Stick down', 'Stick left', 'Stick right', 'Stick click'],
+    thresh: (v) => `Trigger point: ${v} % stick travel`, save: 'Save', defaults: 'Default (WASD)',
+    saved: 'Saved – stays on the stick when unplugged', saveFailed: 'Saving failed', restored: 'Defaults restored',
+    pressed: 'pressed',
+    keyNames: { 32: 'Space', 129: 'Left Shift', 133: 'Right Shift', 128: 'Left Ctrl', 132: 'Right Ctrl', 130: 'Left Alt',
+      179: 'Tab', 176: 'Enter', 177: 'Esc', 178: 'Backspace', 218: 'Arrow up', 217: 'Arrow down', 216: 'Arrow left', 215: 'Arrow right' },
+    hStick: 'Stick & calibration', cal: 'Calibrate', calDone: 'Done',
+    calHint: 'Let go of the stick → “Calibrate” → circle the stick along its outer edge a few times → “Done”.',
+    calRunning: 'CALIBRATING – circle the stick along its edge now',
+    live: (rx, ry, x, y) => `Raw X=${rx} Y=${ry} · Direction X=${x} % Y=${y} %`,
+    rot: (v) => `Stick angle: ${v > 0 ? '+' : ''}${v}°${v > 0 ? ' (clockwise)' : v < 0 ? ' (counter-clockwise)' : ''}`,
+    rotHint: 'Rotates the stick if it sits crooked: push the stick straight up and move the slider until the dot is exactly at the top. Saved immediately.',
+    hDiag: 'Wiring check', diagIntro: 'Checks stick axes and click for common wiring mistakes. Connect the stick first.',
+    diagStart: 'Start check', next: 'Next', measuring: 'Measuring…',
+    diag1: 'Step 1/4: let go of the stick and don’t touch it, then “Next”.',
+    diag2: 'Step 2/4: hold the stick fully RIGHT and click “Next” (keep holding until “Measuring…” is gone).',
+    diag2m: 'Measuring… keep holding right',
+    diag3: 'Step 3/4: hold the stick fully UP and click “Next”.', diag3m: 'Measuring… keep holding up',
+    diag4: 'Step 4/4: PRESS the stick down and keep it pressed, then “Next”.', diag4m: 'Measuring… keep it pressed',
+    axisX: 'X axis (VRx)', axisY: 'Y axis (VRy)', dirRight: 'Stick right', dirUp: 'Stick up',
+    dLow: (n) => `${n}: value almost 0 – signal is shorted to GND, or VCC to the stick is missing.`,
+    dHigh: (n) => `${n}: value almost maximum – signal is shorted to VCC, or GND to the stick is missing.`,
+    dNoisy: (n, s) => `${n}: value jumps a lot (±${s}) – signal wire missing/loose, or GND/VCC to the stick loose.`,
+    dOffCenter: (n, a) => `${n}: center is far off (${a} of 1023) – calibrate once.`,
+    dRestOk: (n, a, s) => `${n}: resting position clean (${a}, noise ±${s}).`,
+    dClickStuck: (pin) => `Click reads “pressed” while released – SW (pin ${pin}) touches GND.`,
+    dPinGnd: (pin) => `Pin ${pin} is permanently at GND – a wire is probably in the wrong place.`,
+    dNoMove: (n) => `${n}: no movement detected. Check the VCC and GND wires to the stick (or it wasn’t pushed all the way).`,
+    dDirOk: (n, pin) => `${n}: arrives correctly at ${pin}.`,
+    dSkew: (n) => `${n}: the other axis moves noticeably too – the stick sits crooked. Fix it with the stick angle.`,
+    dSwapped: (n, got, want) => `${n} arrives at ${got} instead of ${want}: VRx and VRy are swapped.`,
+    dWrongPin: (n, got, want) => `${n} arrives at ${got} – that wire belongs on ${want}.`,
+    dClickOk: (pin) => `Click: arrives correctly (pin ${pin}).`,
+    dClickWrong: (pins) => `Click arrives at pin ${pins} – the SW wire belongs on pin 14 or 16.`,
+    dClickNone: 'Click not detected – SW wire or GND to the stick is missing.',
+    dSummaryBad: (n) => `${n} problem(s) found:`, dSummaryOk: 'Everything is wired correctly.',
+    dAborted: (m) => 'Check aborted: ' + m,
+    hFw: 'Set up a new stick / update firmware', fwUpdate: 'Update firmware',
+    fwUpdateHint: 'For a connected stick – one click, settings are kept.',
+    fwManual: 'New stick, or the update doesn’t work? Do it manually (needs the Arduino bootloader – bought Pro Micros have it):',
+    fwReset: '1. Restart stick',
+    fwResetHint: 'Pick the stick in the dialog (e.g. “Arduino Leonardo”, “Jasp Stick”, “USB Serial Device”). Nothing listed? <b>Tap RST to GND twice quickly</b> and go straight to step 2.',
+    fwFlash: '2. Flash firmware',
+    fwFlashHint: 'Pick the stick in the dialog within <b>8 seconds</b> (it often has a different name now, e.g. “Arduino Leonardo bootloader” or “USB Serial Device”).',
+    fwToBoot: 'Stick is starting its bootloader – now step 2 (within 8 seconds).',
+    fwResetFailed: (m) => `Restart failed: ${m} – tap RST to GND twice, then step 2.`,
+    fwUpdating: 'Updating…', fwBooting: 'Stick is starting its bootloader…',
+    fwPick: 'Please pick the stick in the dialog (now named e.g. “Arduino Leonardo bootloader”).',
+    fwLoadFailed: (m) => 'Could not load the firmware: ' + m,
+    fwErasing: 'Erasing…', fwWriting: (p) => `Writing… ${p} %`, fwVerifying: 'Verifying…',
+    fwDone: (n) => `Done – ${n} bytes flashed and verified. In a few seconds click “Connect” above and calibrate once.`,
+    fwNoDevice: 'No device selected.',
+    fwFailed: (m) => `Failed: ${m}. Picked too late? Repeat step 1, or tap RST to GND twice.`,
+    eChecksum: 'firmware file damaged (checksum)', eTooBig: 'firmware too large for the bootloader area',
+    eNoReply: 'bootloader not responding', eAborted: 'connection lost',
+    eNoBootloader: (id) => `no Arduino bootloader found (reply: ${id})`, eRejected: (w) => `${w} rejected`,
+    eVerify: (b) => `verification failed at byte ${b}`,
+    stepErase: 'erase', stepAddress: 'address', stepWrite: 'write', stepExit: 'exit',
+    hSteam: 'Steam setup (controller mode only)',
+    steamHint: 'Click the button Steam is asking for. Skip every other button in Steam.',
+  },
+};
+
+let lang = (() => { try { return localStorage.getItem('jaspLang'); } catch { return null; } })()
+  || ((navigator.language || 'en').toLowerCase().startsWith('de') ? 'de' : 'en');
+const t = (key, ...args) => { const v = STR[lang][key]; return typeof v === 'function' ? v(...args) : v; };
+
+// Key codes are Arduino Keyboard.h codes; letters, digits and F-keys need no translation.
+const KEY_CODES = [
+  ...[...'abcdefghijklmnopqrstuvwxyz'].map((c) => c.charCodeAt(0)),
+  32, 129, 133, 128, 132, 130, 179, 176, 177, 178, 218, 217, 216, 215,
+  ...Array.from({ length: 12 }, (_, i) => 194 + i),
+  ...[...'0123456789'].map((c) => c.charCodeAt(0)),
+];
+function keyName(code) {
+  if (code >= 97 && code <= 122) return String.fromCharCode(code - 32);
+  if (code >= 48 && code <= 57) return String.fromCharCode(code);
+  if (code >= 194 && code <= 205) return 'F' + (code - 193);
+  return t('keyNames')[code];
+}
 // [label, BTN number]; Steam lets you skip every other button.
 const PAD = [['A', 1], ['B', 2], ['Stick ←', 17], ['Stick →', 18], ['Stick ↑', 19], ['Stick ↓', 20]];
 // 1209 = own "Jasp Stick" ID, 2341 = older Arduino firmware
@@ -173,14 +323,13 @@ const selects = [], indicators = [];
 let port = null, reader = null, writer = null, rxBuffer = '', waiting = null, busy = Promise.resolve();
 let mode = null, pollTimer = null;
 
+const slotLabels = [];
 for (let i = 0; i < 5; i++) {
-  const label = document.createElement('span'); label.textContent = SLOTS[i];
+  const label = document.createElement('span');
   const sel = document.createElement('select');
-  // Digit names are integer-like keys, which JS sorts first; list letters first instead.
-  const names = Object.keys(KEYS);
-  for (const name of [...names.filter((n) => !/^\d$/.test(n)), ...names.filter((n) => /^\d$/.test(n))]) sel.add(new Option(name, KEYS[name]));
+  for (const code of KEY_CODES) sel.add(new Option('', code));
   const ind = document.createElement('span'); ind.className = 'ind'; ind.textContent = '–';
-  $('keys').append(label, sel, ind); selects.push(sel); indicators.push(ind);
+  $('keys').append(label, sel, ind); slotLabels.push(label); selects.push(sel); indicators.push(ind);
 }
 PAD.forEach(([name, number]) => {
   const b = document.createElement('button'); b.textContent = name; b.disabled = true;
@@ -188,16 +337,37 @@ PAD.forEach(([name, number]) => {
   $('pad').append(b);
 });
 
-function setStatus(text, ok) { $('status').textContent = text; $('status').className = (ok ? 'ok' : 'bad') + ' grow'; }
-function updateRotLabel() {
-  const v = Number($('rot').value);
-  $('rotLabel').textContent = `Stickwinkel: ${v > 0 ? '+' : ''}${v}° ${v > 0 ? '(im Uhrzeigersinn)' : v < 0 ? '(gegen Uhrzeigersinn)' : ''}`;
+// Status lines remember their text key, so switching language re-renders them.
+let statusMsg = ['notConnected', [], false];
+function setStatus(key, ok, ...args) {
+  statusMsg = [key, args, ok];
+  $('status').textContent = t(key, ...args); $('status').className = (ok ? 'ok' : 'bad') + ' grow';
 }
-$('rot').oninput = updateRotLabel; updateRotLabel();
+function updateRotLabel() { $('rotLabel').textContent = t('rot', Number($('rot').value)); }
+$('rot').oninput = updateRotLabel;
 $('rot').onchange = () => command('ROT ' + $('rot').value);
 $('rotReset').onclick = () => { $('rot').value = 0; updateRotLabel(); command('ROT 0'); };
-function updateThreshLabel() { $('threshLabel').textContent = `Auslösepunkt: ${$('thresh').value} % Stickweg`; }
-$('thresh').oninput = updateThreshLabel; updateThreshLabel();
+function updateThreshLabel() { $('threshLabel').textContent = t('thresh', $('thresh').value); }
+$('thresh').oninput = updateThreshLabel;
+
+function applyLanguage() {
+  document.documentElement.lang = lang;
+  $('langBtn').textContent = lang === 'de' ? 'EN' : 'DE';
+  document.querySelectorAll('[data-i18n]').forEach((el) => (el.innerHTML = t(el.dataset.i18n)));
+  t('slots').forEach((name, i) => (slotLabels[i].textContent = name));
+  for (const sel of selects) for (const opt of sel.options) opt.textContent = keyName(Number(opt.value));
+  $('connect').textContent = t(port ? 'disconnect' : 'connect');
+  updateRotLabel(); updateThreshLabel(); showMode(mode);
+  $('cal').textContent = t('cal');
+  setStatus(statusMsg[0], statusMsg[2], ...statusMsg[1]);
+  if (fwMsg) fwStatus(...fwMsg);
+  if (diagContinue === null && !$('diagResult').children.length) $('diagStep').textContent = t('diagIntro');
+}
+$('langBtn').onclick = () => {
+  lang = lang === 'de' ? 'en' : 'de';
+  try { localStorage.setItem('jaspLang', lang); } catch {}
+  applyLanguage();
+};
 
 // One command at a time: send a line, resolve with the next line the stick sends back.
 function command(text) {
@@ -227,7 +397,7 @@ async function readLoop() {
       }
     }
   } catch { /* stick unplugged or rebooting */ }
-  if (port) disconnect('Verbindung getrennt');
+  if (port) disconnect('connLost');
 }
 
 async function connect() {
@@ -240,17 +410,17 @@ async function connect() {
     port = target; reader = port.readable.getReader(); writer = port.writable.getWriter(); rxBuffer = '';
     readLoop();
     await new Promise((r) => setTimeout(r, 300));
-    setStatus('Verbunden', true);
-    $('connect').textContent = 'Trennen';
+    setStatus('connected', true);
+    $('connect').textContent = t('disconnect');
     await loadConfig();
     pollTimer = setInterval(poll, 150);
   } catch (e) {
-    if (e.name !== 'NotFoundError') setStatus('Verbinden fehlgeschlagen – ist der Jasp-Mapper noch offen? (' + e.message + ')', false);
     await disconnect();
+    if (e.name !== 'NotFoundError') setStatus('connectFailed', false, e.message);
   }
 }
 
-async function disconnect(text) {
+async function disconnect(key) {
   clearInterval(pollTimer); pollTimer = null;
   const p = port; port = null;
   try { reader && await reader.cancel(); } catch {}
@@ -259,8 +429,8 @@ async function disconnect(text) {
   reader = writer = null;
   try { p && await p.close(); } catch {}
   if (waiting) waiting(null);
-  setStatus(text || 'Nicht verbunden', false);
-  $('connect').textContent = 'Verbinden';
+  setStatus(key || 'notConnected', false);
+  $('connect').textContent = t('connect');
   showMode(null);
 }
 
@@ -268,7 +438,7 @@ async function loadConfig() {
   const cfg = await command('GET');
   const parts = (cfg || '').split(' ');
   if (parts[0] === 'CFG' && parts.length >= 7) {
-    for (let i = 0; i < 5; i++) if (NAME_BY_CODE[parts[i + 1]]) selects[i].value = parts[i + 1];
+    for (let i = 0; i < 5; i++) if (KEY_CODES.includes(Number(parts[i + 1]))) selects[i].value = parts[i + 1];
     $('thresh').value = parts[6]; updateThreshLabel();
   }
   const rot = await command('ROT');
@@ -290,8 +460,8 @@ function showMode(m) {
   if (!connected) $('rot').disabled = $('rotReset').disabled = true;
   $('pad').querySelectorAll('button').forEach((b) => (b.disabled = !(connected && m === 1)));
   $('modeBtn').disabled = !(connected && (m === 0 || m === 1));
-  $('modeLabel').textContent = !connected ? '–' : m === 1 ? 'Controller (Gamepad)' : m === 0 ? 'Tastatur' : 'unbekannt (alte Firmware)';
-  $('modeBtn').textContent = m === 1 ? 'Zu Tastatur wechseln' : 'Zu Controller wechseln';
+  $('modeLabel').textContent = !connected ? '–' : t(m === 1 ? 'modeGamepad' : m === 0 ? 'modeKeyboard' : 'modeUnknown');
+  $('modeBtn').textContent = t(m === 1 ? 'toKeyboard' : 'toGamepad');
 }
 
 async function poll() {
@@ -303,26 +473,24 @@ async function poll() {
   $('dot').style.left = (53 + x * 50) + 'px';
   $('dot').style.top = (53 - y * 50) + 'px';
   $('live').className = calibrating ? 'cal' : '';
-  $('live').textContent = calibrating
-    ? 'KALIBRIERUNG LÄUFT – Stick jetzt außen kreisen'
-    : `Roh X=${p[1]} Y=${p[2]} · Richtung X=${Math.round(x * 100)} % Y=${Math.round(y * 100)} %`;
-  $('cal').textContent = calibrating ? 'Fertig' : 'Kalibrieren';
+  $('live').textContent = calibrating ? t('calRunning') : t('live', p[1], p[2], Math.round(x * 100), Math.round(y * 100));
+  $('cal').textContent = t(calibrating ? 'calDone' : 'cal');
   for (let i = 0; i < 5; i++) {
     const on = p[6 + i] === '1';
-    indicators[i].classList.toggle('on', on); indicators[i].textContent = on ? 'gedrückt' : '–';
+    indicators[i].classList.toggle('on', on); indicators[i].textContent = on ? t('pressed') : '–';
   }
 }
 
 $('connect').onclick = () => (port ? disconnect() : connect());
 $('save').onclick = async () => {
   const reply = await command(`SET ${selects.map((s) => s.value).join(' ')} ${$('thresh').value}`);
-  setStatus(reply === 'OK' ? 'Gespeichert – bleibt auch nach dem Abstecken' : 'Speichern fehlgeschlagen', reply === 'OK');
+  setStatus(reply === 'OK' ? 'saved' : 'saveFailed', reply === 'OK');
 };
-$('defaults').onclick = async () => { await command('RESETKEYS'); await loadConfig(); setStatus('Standard wiederhergestellt', true); };
+$('defaults').onclick = async () => { await command('RESETKEYS'); await loadConfig(); setStatus('restored', true); };
 $('cal').onclick = () => command('CAL');
 $('modeBtn').onclick = async () => {
   await command('MODE ' + (mode === 1 ? 0 : 1));
-  await disconnect('Stick startet neu – gleich auf „Verbinden“ klicken');
+  await disconnect('rebooting');
 };
 
 // ---- Wiring check (firmware DIAG: raw A0..A3 + digital pins reading LOW) ----
@@ -336,7 +504,7 @@ async function sampleDiag(ms) {
     const d = await command('DIAG');
     const p = (d || '').split(' ');
     if (p[0] !== 'DIAG' || p.length < 6) {
-      if (!port) throw new Error('Verbindung getrennt');
+      if (!port) throw new Error(t('connLost'));
       continue;
     }
     for (let i = 0; i < 4; i++) values[i].push(Number(p[i + 1]));
@@ -351,7 +519,7 @@ async function sampleDiag(ms) {
 let diagContinue = null;
 function diagAsk(text) {
   $('diagStep').textContent = text; $('diagStep').className = 'hint active';
-  $('diagBtn').textContent = 'Weiter'; $('diagBtn').disabled = false;
+  $('diagBtn').textContent = t('next'); $('diagBtn').disabled = false;
   return new Promise((r) => (diagContinue = r));
 }
 function diagNote(cls, text) {
@@ -368,17 +536,17 @@ function movedAxis(rest, step) {
 function checkDirection(rest, step, name, expected, other) {
   const m = movedAxis(rest, step);
   if (m.moved < 120) {
-    diagNote('bad', `${name}: keine Bewegung erkannt. VCC- oder GND-Kabel zum Stick prüfen (oder Stick nicht bis zum Anschlag gedrückt).`);
+    diagNote('bad', t('dNoMove', name));
     return;
   }
   if (m.pin === expected) {
-    diagNote('ok', `${name}: kommt richtig an ${AXIS_PIN[expected]} an.`);
+    diagNote('ok', t('dDirOk', name, AXIS_PIN[expected]));
     const cross = m.deltas[other] / m.deltas[expected];
-    if (cross > 0.35) diagNote('warn', `${name}: die andere Achse bewegt sich deutlich mit – Stick sitzt schief. Mit dem Stickwinkel ausgleichen.`);
+    if (cross > 0.35) diagNote('warn', t('dSkew', name));
   } else if (m.pin === other) {
-    diagNote('bad', `${name} kommt an ${AXIS_PIN[other]} statt ${AXIS_PIN[expected]} an: VRx und VRy sind vertauscht.`);
+    diagNote('bad', t('dSwapped', name, AXIS_PIN[other], AXIS_PIN[expected]));
   } else {
-    diagNote('bad', `${name} kommt an ${AXIS_PIN[m.pin]} an – das Kabel gehört an ${AXIS_PIN[expected]}.`);
+    diagNote('bad', t('dWrongPin', name, AXIS_PIN[m.pin], AXIS_PIN[expected]));
   }
 }
 
@@ -386,56 +554,60 @@ async function runDiag() {
   clearInterval(pollTimer); pollTimer = null;
   $('diagResult').replaceChildren();
   try {
-    await diagAsk('Schritt 1/4: Stick loslassen und nicht berühren, dann „Weiter“.');
-    $('diagBtn').disabled = true; $('diagStep').textContent = 'Messe…';
+    await diagAsk(t('diag1'));
+    $('diagBtn').disabled = true; $('diagStep').textContent = t('measuring');
     const rest = await sampleDiag(1500);
-    await diagAsk('Schritt 2/4: Stick nach RECHTS bis zum Anschlag halten und „Weiter“ klicken (weiter halten, bis „Messe…“ weg ist).');
-    $('diagBtn').disabled = true; $('diagStep').textContent = 'Messe… Stick weiter rechts halten';
+    await diagAsk(t('diag2'));
+    $('diagBtn').disabled = true; $('diagStep').textContent = t('diag2m');
     const right = await sampleDiag(1500);
-    await diagAsk('Schritt 3/4: Stick nach OBEN bis zum Anschlag halten und „Weiter“ klicken.');
-    $('diagBtn').disabled = true; $('diagStep').textContent = 'Messe… Stick weiter oben halten';
+    await diagAsk(t('diag3'));
+    $('diagBtn').disabled = true; $('diagStep').textContent = t('diag3m');
     const up = await sampleDiag(1500);
-    await diagAsk('Schritt 4/4: Stick REINDRÜCKEN und gedrückt halten, dann „Weiter“.');
-    $('diagBtn').disabled = true; $('diagStep').textContent = 'Messe… weiter gedrückt halten';
+    await diagAsk(t('diag4'));
+    $('diagBtn').disabled = true; $('diagStep').textContent = t('diag4m');
     const click = await sampleDiag(1500);
 
     // Resting axes: stuck at a rail or jumping around means a missing wire.
-    for (const [name, pin] of [['X-Achse (VRx)', 1], ['Y-Achse (VRy)', 0]]) {
+    for (const [name, pin] of [[t('axisX'), 1], [t('axisY'), 0]]) {
       const a = rest.avg[pin], s = rest.spread[pin];
-      if (a < 40) diagNote('bad', `${name}: Wert fast 0 – Signal hängt an GND, oder VCC am Stick fehlt.`);
-      else if (a > 985) diagNote('bad', `${name}: Wert fast Maximum – Signal hängt an VCC, oder GND am Stick fehlt.`);
-      else if (s > 120) diagNote('bad', `${name}: Wert springt stark (±${Math.round(s / 2)}) – Signalkabel fehlt/lose oder GND/VCC am Stick lose.`);
-      else if (a < 330 || a > 700) diagNote('warn', `${name}: Mitte liegt weit außen (${Math.round(a)} von 1023) – einmal kalibrieren.`);
-      else diagNote('ok', `${name}: Ruheposition sauber (${Math.round(a)}, Rauschen ±${Math.round(s / 2)}).`);
+      if (a < 40) diagNote('bad', t('dLow', name));
+      else if (a > 985) diagNote('bad', t('dHigh', name));
+      else if (s > 120) diagNote('bad', t('dNoisy', name, Math.round(s / 2)));
+      else if (a < 330 || a > 700) diagNote('warn', t('dOffCenter', name, Math.round(a)));
+      else diagNote('ok', t('dRestOk', name, Math.round(a), Math.round(s / 2)));
     }
     for (const pin of rest.lows) {
-      if (pin === 14 || pin === 16) diagNote('bad', `Klick meldet „gedrückt“, obwohl losgelassen – SW (Pin ${pin}) hat Kontakt zu GND.`);
-      else diagNote('warn', `Pin ${pin} liegt dauerhaft an GND – da steckt vermutlich ein Kabel falsch.`);
+      if (pin === 14 || pin === 16) diagNote('bad', t('dClickStuck', pin));
+      else diagNote('warn', t('dPinGnd', pin));
     }
 
-    checkDirection(rest, right, 'Stick rechts', 1, 0);
-    checkDirection(rest, up, 'Stick oben', 0, 1);
+    checkDirection(rest, right, t('dirRight'), 1, 0);
+    checkDirection(rest, up, t('dirUp'), 0, 1);
 
     const pressed = [...click.lows].filter((p) => !rest.lows.has(p));
-    if (pressed.includes(14) || pressed.includes(16)) diagNote('ok', `Klick: kommt richtig an (Pin ${pressed.includes(14) ? 14 : 16}).`);
-    else if (pressed.length) diagNote('bad', `Klick kommt an Pin ${pressed.join(', ')} an – das SW-Kabel gehört an Pin 14 oder 16.`);
-    else if (!rest.lows.has(14) && !rest.lows.has(16)) diagNote('bad', 'Klick nicht erkannt – SW-Kabel oder GND zum Stick fehlt.');
+    if (pressed.includes(14) || pressed.includes(16)) diagNote('ok', t('dClickOk', pressed.includes(14) ? 14 : 16));
+    else if (pressed.length) diagNote('bad', t('dClickWrong', pressed.join(', ')));
+    else if (!rest.lows.has(14) && !rest.lows.has(16)) diagNote('bad', t('dClickNone'));
 
     const bad = $('diagResult').querySelectorAll('.bad').length;
-    $('diagStep').textContent = bad ? `${bad} Problem(e) gefunden:` : 'Alles richtig verdrahtet.';
+    $('diagStep').textContent = bad ? t('dSummaryBad', bad) : t('dSummaryOk');
     $('diagStep').className = 'hint active';
   } catch (e) {
-    $('diagStep').textContent = 'Check abgebrochen: ' + e.message;
+    $('diagStep').textContent = t('dAborted', e.message);
   }
   diagContinue = null;
-  $('diagBtn').textContent = 'Check starten'; $('diagBtn').disabled = !port;
+  $('diagBtn').textContent = t('diagStart'); $('diagBtn').disabled = !port;
   if (port) pollTimer = setInterval(poll, 150);
 }
 
 $('diagBtn').onclick = () => (diagContinue ? diagContinue() : runDiag());
 
 // ---- Firmware flashing (Caterina bootloader, AVR109 protocol – same as avrdude -c avr109) ----
-function fwStatus(text, cls) { $('fwStatus').textContent = text; $('fwStatus').className = 'hint ' + (cls || ''); }
+let fwMsg = null;
+function fwStatus(key, cls, ...args) {
+  fwMsg = [key, cls, ...args];
+  $('fwStatus').textContent = t(key, ...args); $('fwStatus').className = 'hint ' + (cls || '');
+}
 
 function parseHex(text) {
   const image = new Uint8Array(32768).fill(0xFF);
@@ -445,7 +617,7 @@ function parseHex(text) {
     if (!line.startsWith(':')) continue;
     const bytes = line.slice(1).match(/../g).map((h) => parseInt(h, 16));
     const sum = bytes.reduce((a, b) => a + b, 0) & 0xFF;
-    if (sum !== 0) throw new Error('Firmware-Datei beschädigt (Prüfsumme)');
+    if (sum !== 0) throw new Error(t('eChecksum'));
     const [len, hi, lo, type] = bytes;
     const data = bytes.slice(4, 4 + len);
     if (type === 0) {
@@ -456,7 +628,7 @@ function parseHex(text) {
     else if (type === 4) base = (data[0] << 8 | data[1]) << 16;
     else if (type === 1) break;
   }
-  if (end > 28672) throw new Error('Firmware zu groß für den Bootloader-Bereich');
+  if (end > 28672) throw new Error(t('eTooBig'));
   return image.slice(0, (end + 127) & ~127);  // whole 128-byte pages
 }
 
@@ -470,12 +642,12 @@ function byteReader(serial) {
       const deadline = Date.now() + ms;
       while (buf.length < n) {
         const left = deadline - Date.now();
-        if (left <= 0) throw new Error('Bootloader antwortet nicht');
+        if (left <= 0) throw new Error(t('eNoReply'));
         pending = pending || r.read();
         const res = await Promise.race([pending, new Promise((ok) => setTimeout(() => ok({ timeout: true }), left))]);
         if (res.timeout) continue;
         pending = null;
-        if (res.done) throw new Error('Verbindung abgebrochen');
+        if (res.done) throw new Error(t('eAborted'));
         buf.push(...res.value);
       }
       const out = buf.slice(0, n); buf = buf.slice(n); return out;
@@ -492,9 +664,9 @@ $('fwReset').onclick = async () => {
     await target.open({ baudRate: 1200 });
     await target.setSignals({ dataTerminalReady: false });
     await target.close();
-    fwStatus('Stick startet in den Bootloader – jetzt Schritt 2 (innerhalb von 8 Sekunden).');
+    fwStatus('fwToBoot');
   } catch (e) {
-    if (e.name !== 'NotFoundError') fwStatus('Neustart fehlgeschlagen: ' + e.message + ' – dann RST zweimal an GND tippen und Schritt 2.', 'bad');
+    if (e.name !== 'NotFoundError') fwStatus('fwResetFailed', 'bad', e.message);
   }
 };
 
@@ -509,20 +681,20 @@ const isBootloader = (p) => BOOTLOADER_IDS.some(([v, d]) => p.getInfo().usbVendo
 $('fwUpdate').onclick = async () => {
   const running = port;
   if (!running) return;
-  await disconnect('Update läuft…');
+  await disconnect('fwUpdating');
   try {
     await running.open({ baudRate: 1200 });
     await running.setSignals({ dataTerminalReady: false });
     await running.close();
-  } catch (e) { return fwStatus('Neustart fehlgeschlagen: ' + e.message, 'bad'); }
-  fwStatus('Stick startet in den Bootloader…');
+  } catch (e) { return fwStatus('fwResetFailed', 'bad', e.message); }
+  fwStatus('fwBooting');
   await flashFirmware(async () => {
     for (let i = 0; i < 12; i++) {
       await new Promise((r) => setTimeout(r, 250));
       const known = (await navigator.serial.getPorts()).find(isBootloader);
       if (known) return known;
     }
-    fwStatus('Bitte den Stick im Fenster wählen (heißt jetzt z. B. „Arduino Leonardo bootloader“).');
+    fwStatus('fwPick');
     return navigator.serial.requestPort();
   });
 };
@@ -532,7 +704,7 @@ async function flashFirmware(pickPort) {
   let image;
   try {
     image = parseHex(await (await fetch('firmware.hex', { cache: 'no-store' })).text());
-  } catch (e) { return fwStatus('Firmware konnte nicht geladen werden: ' + e.message, 'bad'); }
+  } catch (e) { return fwStatus('fwLoadFailed', 'bad', e.message); }
 
   let target, rd, wr;
   try {
@@ -540,42 +712,42 @@ async function flashFirmware(pickPort) {
     await target.open({ baudRate: 57600 });
     rd = byteReader(target); wr = target.writable.getWriter();
     const send = (bytes) => wr.write(new Uint8Array(bytes));
-    const expectCR = async (what) => { const [b] = await rd.read(1); if (b !== 13) throw new Error(what + ' abgelehnt'); };
+    const expectCR = async (step) => { const [b] = await rd.read(1); if (b !== 13) throw new Error(t('eRejected', t(step))); };
 
     await send([0x53]);  // 'S' – programmer id, 7 chars ("CATERIN")
     const id = String.fromCharCode(...await rd.read(7));
-    if (!/CATERIN|AVRBOOT|LUFA/i.test(id)) throw new Error('Kein Arduino-Bootloader gefunden (Antwort: ' + id + ')');
+    if (!/CATERIN|AVRBOOT|LUFA/i.test(id)) throw new Error(t('eNoBootloader', id));
 
     $('fwProgress').hidden = false; $('fwProgress').value = 0;
-    fwStatus('Lösche…');
-    await send([0x65]); await expectCR('Löschen');  // 'e' chip erase
+    fwStatus('fwErasing');
+    await send([0x65]); await expectCR('stepErase');  // 'e' chip erase
 
     const PAGE = 128;
     const total = image.length / PAGE;
-    await send([0x41, 0, 0]); await expectCR('Adresse');  // 'A' word address 0
+    await send([0x41, 0, 0]); await expectCR('stepAddress');  // 'A' word address 0
     for (let p = 0; p < total; p++) {
       const chunk = image.slice(p * PAGE, (p + 1) * PAGE);
-      await send([0x42, 0, PAGE, 0x46, ...chunk]); await expectCR('Schreiben');  // 'B' size 'F' data
+      await send([0x42, 0, PAGE, 0x46, ...chunk]); await expectCR('stepWrite');  // 'B' size 'F' data
       $('fwProgress').value = (p + 1) / total / 2;
-      fwStatus(`Schreibe… ${Math.round((p + 1) / total * 100)} %`);
+      fwStatus('fwWriting', '', Math.round((p + 1) / total * 100));
     }
 
-    fwStatus('Prüfe…');
-    await send([0x41, 0, 0]); await expectCR('Adresse');
+    fwStatus('fwVerifying');
+    await send([0x41, 0, 0]); await expectCR('stepAddress');
     for (let p = 0; p < total; p++) {
       await send([0x67, 0, PAGE, 0x46]);  // 'g' read block
       const back = await rd.read(PAGE);
       for (let i = 0; i < PAGE; i++) {
-        if (back[i] !== image[p * PAGE + i]) throw new Error(`Prüfung fehlgeschlagen bei Byte ${p * PAGE + i}`);
+        if (back[i] !== image[p * PAGE + i]) throw new Error(t('eVerify', p * PAGE + i));
       }
       $('fwProgress').value = 0.5 + (p + 1) / total / 2;
     }
 
-    await send([0x45]); await expectCR('Beenden');  // 'E' leave bootloader, start firmware
-    fwStatus(`Fertig – ${image.length} Bytes aufgespielt und geprüft. In ein paar Sekunden oben auf „Verbinden“ und einmal kalibrieren.`, 'ok');
+    await send([0x45]); await expectCR('stepExit');  // 'E' leave bootloader, start firmware
+    fwStatus('fwDone', 'ok', image.length);
   } catch (e) {
-    if (e.name === 'NotFoundError') fwStatus('Kein Gerät gewählt.', 'bad');
-    else fwStatus('Fehlgeschlagen: ' + e.message + '. Zu spät gewählt? Dann Schritt 1 wiederholen bzw. RST zweimal an GND tippen.', 'bad');
+    if (e.name === 'NotFoundError') fwStatus('fwNoDevice', 'bad');
+    else fwStatus('fwFailed', 'bad', e.message);
   } finally {
     try { rd && await rd.release(); } catch {}
     try { wr && wr.releaseLock(); } catch {}
@@ -587,7 +759,8 @@ if (!('serial' in navigator)) {
   $('nosupport').hidden = false; $('connect').disabled = true;
   $('fwReset').disabled = $('fwFlash').disabled = true;
 }
-navigator.serial?.addEventListener('disconnect', (e) => { if (e.target === port) disconnect('Stick abgesteckt'); });
+navigator.serial?.addEventListener('disconnect', (e) => { if (e.target === port) disconnect('unplugged'); });
+applyLanguage();
 </script>
 </body>
 </html>
