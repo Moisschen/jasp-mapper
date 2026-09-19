@@ -53,6 +53,10 @@
   .steps .hint { margin: 0; }
   progress { width: 100%; height: 10px; margin-top: 4px; accent-color: var(--accent); }
   #fwStatus.ok { color: var(--ok); font-weight: 600; } #fwStatus.bad { color: var(--bad); font-weight: 600; }
+  .diag { margin: 10px 0 0; padding-left: 20px; }
+  .diag li { margin: 4px 0; }
+  .diag .ok { color: var(--ok); } .diag .bad { color: var(--bad); } .diag .warn { color: var(--warn); }
+  #diagStep.active { color: var(--text); font-weight: 600; }
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -112,6 +116,15 @@
       </div>
       <p class="hint">Dreht den Stick, falls er schief sitzt: Stick gerade nach oben drücken und so lange schieben, bis der Punkt genau oben steht. Wird sofort gespeichert.</p>
     </div>
+  </div>
+
+  <div class="card">
+    <h2>Verdrahtungs-Check</h2>
+    <div id="diagStep" class="hint" style="margin-top:0">Prüft Stick-Achsen und Klick auf typische Verdrahtungsfehler. Stick vorher verbinden.</div>
+    <div class="row" style="margin-top:10px">
+      <button id="diagBtn" disabled>Check starten</button>
+    </div>
+    <ul id="diagResult" class="diag"></ul>
   </div>
 
   <div class="card">
@@ -268,6 +281,7 @@ function showMode(m) {
   const keyboard = connected && m !== 1;
   for (const el of [...selects, $('thresh'), $('save'), $('defaults')]) el.disabled = !keyboard;
   $('cal').disabled = !connected;
+  $('diagBtn').disabled = !connected;
   if (!connected) $('rot').disabled = $('rotReset').disabled = true;
   $('pad').querySelectorAll('button').forEach((b) => (b.disabled = !(connected && m === 1)));
   $('modeBtn').disabled = !(connected && (m === 0 || m === 1));
@@ -305,6 +319,115 @@ $('modeBtn').onclick = async () => {
   await command('MODE ' + (mode === 1 ? 0 : 1));
   await disconnect('Stick startet neu – gleich auf „Verbinden“ klicken');
 };
+
+// ---- Wiring check (firmware DIAG: raw A0..A3 + digital pins reading LOW) ----
+// Expected wiring: VRx -> A1, VRy -> A0, SW -> pin 14 or 16, plus VCC and GND.
+const AXIS_PIN = ['A0', 'A1', 'A2', 'A3'];
+
+async function sampleDiag(ms) {
+  const values = [[], [], [], []], lows = new Set();
+  const end = Date.now() + ms;
+  while (Date.now() < end) {
+    const d = await command('DIAG');
+    const p = (d || '').split(' ');
+    if (p[0] !== 'DIAG' || p.length < 6) {
+      if (!port) throw new Error('Verbindung getrennt');
+      continue;
+    }
+    for (let i = 0; i < 4; i++) values[i].push(Number(p[i + 1]));
+    if (p[5] !== '-') p[5].split(',').forEach((n) => lows.add(Number(n)));
+    await new Promise((r) => setTimeout(r, 30));
+  }
+  const avg = values.map((v) => v.reduce((a, b) => a + b, 0) / Math.max(1, v.length));
+  const spread = values.map((v) => Math.max(...v) - Math.min(...v));
+  return { avg, spread, lows };
+}
+
+let diagContinue = null;
+function diagAsk(text) {
+  $('diagStep').textContent = text; $('diagStep').className = 'hint active';
+  $('diagBtn').textContent = 'Weiter'; $('diagBtn').disabled = false;
+  return new Promise((r) => (diagContinue = r));
+}
+function diagNote(cls, text) {
+  const li = document.createElement('li'); li.className = cls; li.textContent = text; $('diagResult').append(li);
+}
+
+// Which analog input moved most compared with the resting reading.
+function movedAxis(rest, step) {
+  const delta = step.avg.map((v, i) => Math.abs(v - rest.avg[i]));
+  const best = delta.indexOf(Math.max(...delta));
+  return { pin: best, moved: delta[best], deltas: delta };
+}
+
+function checkDirection(rest, step, name, expected, other) {
+  const m = movedAxis(rest, step);
+  if (m.moved < 120) {
+    diagNote('bad', `${name}: keine Bewegung erkannt. VCC- oder GND-Kabel zum Stick prüfen (oder Stick nicht bis zum Anschlag gedrückt).`);
+    return;
+  }
+  if (m.pin === expected) {
+    diagNote('ok', `${name}: kommt richtig an ${AXIS_PIN[expected]} an.`);
+    const cross = m.deltas[other] / m.deltas[expected];
+    if (cross > 0.35) diagNote('warn', `${name}: die andere Achse bewegt sich deutlich mit – Stick sitzt schief. Mit dem Stickwinkel ausgleichen.`);
+  } else if (m.pin === other) {
+    diagNote('bad', `${name} kommt an ${AXIS_PIN[other]} statt ${AXIS_PIN[expected]} an: VRx und VRy sind vertauscht.`);
+  } else {
+    diagNote('bad', `${name} kommt an ${AXIS_PIN[m.pin]} an – das Kabel gehört an ${AXIS_PIN[expected]}.`);
+  }
+}
+
+async function runDiag() {
+  clearInterval(pollTimer); pollTimer = null;
+  $('diagResult').replaceChildren();
+  try {
+    await diagAsk('Schritt 1/4: Stick loslassen und nicht berühren, dann „Weiter“.');
+    $('diagBtn').disabled = true; $('diagStep').textContent = 'Messe…';
+    const rest = await sampleDiag(1500);
+    await diagAsk('Schritt 2/4: Stick nach RECHTS bis zum Anschlag halten und „Weiter“ klicken (weiter halten, bis „Messe…“ weg ist).');
+    $('diagBtn').disabled = true; $('diagStep').textContent = 'Messe… Stick weiter rechts halten';
+    const right = await sampleDiag(1500);
+    await diagAsk('Schritt 3/4: Stick nach OBEN bis zum Anschlag halten und „Weiter“ klicken.');
+    $('diagBtn').disabled = true; $('diagStep').textContent = 'Messe… Stick weiter oben halten';
+    const up = await sampleDiag(1500);
+    await diagAsk('Schritt 4/4: Stick REINDRÜCKEN und gedrückt halten, dann „Weiter“.');
+    $('diagBtn').disabled = true; $('diagStep').textContent = 'Messe… weiter gedrückt halten';
+    const click = await sampleDiag(1500);
+
+    // Resting axes: stuck at a rail or jumping around means a missing wire.
+    for (const [name, pin] of [['X-Achse (VRx)', 1], ['Y-Achse (VRy)', 0]]) {
+      const a = rest.avg[pin], s = rest.spread[pin];
+      if (a < 40) diagNote('bad', `${name}: Wert fast 0 – Signal hängt an GND, oder VCC am Stick fehlt.`);
+      else if (a > 985) diagNote('bad', `${name}: Wert fast Maximum – Signal hängt an VCC, oder GND am Stick fehlt.`);
+      else if (s > 120) diagNote('bad', `${name}: Wert springt stark (±${Math.round(s / 2)}) – Signalkabel fehlt/lose oder GND/VCC am Stick lose.`);
+      else if (a < 330 || a > 700) diagNote('warn', `${name}: Mitte liegt weit außen (${Math.round(a)} von 1023) – einmal kalibrieren.`);
+      else diagNote('ok', `${name}: Ruheposition sauber (${Math.round(a)}, Rauschen ±${Math.round(s / 2)}).`);
+    }
+    for (const pin of rest.lows) {
+      if (pin === 14 || pin === 16) diagNote('bad', `Klick meldet „gedrückt“, obwohl losgelassen – SW (Pin ${pin}) hat Kontakt zu GND.`);
+      else diagNote('warn', `Pin ${pin} liegt dauerhaft an GND – da steckt vermutlich ein Kabel falsch.`);
+    }
+
+    checkDirection(rest, right, 'Stick rechts', 1, 0);
+    checkDirection(rest, up, 'Stick oben', 0, 1);
+
+    const pressed = [...click.lows].filter((p) => !rest.lows.has(p));
+    if (pressed.includes(14) || pressed.includes(16)) diagNote('ok', `Klick: kommt richtig an (Pin ${pressed.includes(14) ? 14 : 16}).`);
+    else if (pressed.length) diagNote('bad', `Klick kommt an Pin ${pressed.join(', ')} an – das SW-Kabel gehört an Pin 14 oder 16.`);
+    else if (!rest.lows.has(14) && !rest.lows.has(16)) diagNote('bad', 'Klick nicht erkannt – SW-Kabel oder GND zum Stick fehlt.');
+
+    const bad = $('diagResult').querySelectorAll('.bad').length;
+    $('diagStep').textContent = bad ? `${bad} Problem(e) gefunden:` : 'Alles richtig verdrahtet.';
+    $('diagStep').className = 'hint active';
+  } catch (e) {
+    $('diagStep').textContent = 'Check abgebrochen: ' + e.message;
+  }
+  diagContinue = null;
+  $('diagBtn').textContent = 'Check starten'; $('diagBtn').disabled = !port;
+  if (port) pollTimer = setInterval(poll, 150);
+}
+
+$('diagBtn').onclick = () => (diagContinue ? diagContinue() : runDiag());
 
 // ---- Firmware flashing (Caterina bootloader, AVR109 protocol – same as avrdude -c avr109) ----
 function fwStatus(text, cls) { $('fwStatus').textContent = text; $('fwStatus').className = 'hint ' + (cls || ''); }
