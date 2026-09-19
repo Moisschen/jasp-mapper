@@ -62,7 +62,7 @@
 </head>
 <body>
 <main>
-  <div class="row"><h1 class="grow">Jasp-Mapper</h1><button id="langBtn" title="Sprache / Language">EN</button></div>
+  <div class="row"><h1 class="grow" data-i18n="title"></h1><button id="langBtn" title="Sprache / Language">EN</button></div>
   <p class="sub" data-i18n="sub"></p>
 
   <div class="card nosupport" id="nosupport" hidden data-i18n="nosupport"></div>
@@ -153,6 +153,7 @@
 // ---- Texts (German / English) ----
 const STR = {
   de: {
+    title: 'Mapper für Jasp Keyboard-Joystick',
     sub: 'Belegung, Kalibrierung und Modus des Jasp-Sticks ändern, direkt im Browser.',
     nosupport: 'Dieser Browser kann nicht mit USB-Geräten sprechen. Bitte <b>Chrome</b> oder <b>Edge</b> am PC verwenden.',
     connect: 'Verbinden', disconnect: 'Trennen', notConnected: 'Nicht verbunden', connected: 'Verbunden',
@@ -224,6 +225,7 @@ const STR = {
     steamHint: 'Den Knopf klicken, den Steam gerade verlangt. Alle anderen Knöpfe in Steam überspringen.',
   },
   en: {
+    title: 'Mapper for Jasp Keyboard-Joystick',
     sub: 'Change key mapping, calibration and mode of the Jasp stick, right in your browser.',
     nosupport: 'This browser can’t talk to USB devices. Please use <b>Chrome</b> or <b>Edge</b> on a PC.',
     connect: 'Connect', disconnect: 'Disconnect', notConnected: 'Not connected', connected: 'Connected',
@@ -352,6 +354,7 @@ $('thresh').oninput = updateThreshLabel;
 
 function applyLanguage() {
   document.documentElement.lang = lang;
+  document.title = t('title');
   $('langBtn').textContent = lang === 'de' ? 'EN' : 'DE';
   document.querySelectorAll('[data-i18n]').forEach((el) => (el.innerHTML = t(el.dataset.i18n)));
   t('slots').forEach((name, i) => (slotLabels[i].textContent = name));
