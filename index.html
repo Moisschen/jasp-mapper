@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jasp-Mapper</title>
+<style>
+  :root {
+    --bg: #f4f5f7; --card: #fff; --text: #1d2330; --muted: #6b7280; --line: #dde1e7;
+    --accent: #2563eb; --accent-text: #fff; --ok: #16a34a; --bad: #dc2626; --warn: #d97706; --pressed: #bbf7d0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12151b; --card: #1b1f27; --text: #e6e8ec; --muted: #9aa3b2; --line: #2c323d;
+      --accent: #3b82f6; --ok: #22c55e; --bad: #f87171; --warn: #fbbf24; --pressed: #14532d;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 "Segoe UI", system-ui, sans-serif; }
+  main { max-width: 560px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 20px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 12px; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .grow { flex: 1; }
+  button {
+    font: inherit; border: 1px solid var(--line); background: var(--card); color: var(--text);
+    border-radius: 8px; padding: 8px 14px; cursor: pointer;
+  }
+  button:hover:not(:disabled) { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  button:disabled { opacity: .45; cursor: default; }
+  select { font: inherit; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); width: 100%; }
+  #status { font-weight: 600; }
+  #status.ok { color: var(--ok); } #status.bad { color: var(--bad); }
+  .keys { display: grid; grid-template-columns: 110px 1fr 86px; gap: 8px 10px; align-items: center; }
+  .ind { text-align: center; border: 1px solid var(--line); border-radius: 6px; padding: 4px 0; font-size: 12px; color: var(--muted); }
+  .ind.on { background: var(--pressed); color: var(--text); }
+  input[type=range] { width: 100%; }
+  .stick { width: 120px; height: 120px; border: 1px solid var(--line); border-radius: 50%; position: relative; flex: none; }
+  .stick::before, .stick::after { content: ""; position: absolute; background: var(--line); }
+  .stick::before { left: 50%; top: 8px; bottom: 8px; width: 1px; }
+  .stick::after { top: 50%; left: 8px; right: 8px; height: 1px; }
+  #dot { position: absolute; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); left: 53px; top: 53px; z-index: 1; }
+  #live { color: var(--muted); font-size: 13px; }
+  #live.cal { color: var(--warn); font-weight: 600; }
+  .pad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .hint { color: var(--muted); font-size: 13px; margin: 10px 0 0; }
+  .nosupport { border-color: var(--bad); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Jasp-Mapper</h1>
+  <p class="sub">Belegung, Kalibrierung und Modus des Jasp-Sticks ändern, direkt im Browser.</p>
+
+  <div class="card nosupport" id="nosupport" hidden>
+    Dieser Browser kann nicht mit USB-Geräten sprechen. Bitte <b>Chrome</b> oder <b>Edge</b> am PC verwenden.
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <span id="status" class="bad grow">Nicht verbunden</span>
+      <button id="connect" class="primary">Verbinden</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Modus</h2>
+    <div class="row">
+      <span id="modeLabel" class="grow">–</span>
+      <button id="modeBtn" disabled>Umschalten</button>
+    </div>
+    <p class="hint">Tastatur: Spiele sehen nur Tasten (z.&nbsp;B. für Fortnite). Controller: Analog-Stick + Knopf, in Steam als Xbox-Controller nutzbar. Beim Umschalten startet der Stick neu – danach einmal neu verbinden.</p>
+  </div>
+
+  <div class="card" id="keyCard">
+    <h2>Tasten</h2>
+    <div class="keys" id="keys"></div>
+    <div style="margin-top:14px">
+      <label for="thresh" id="threshLabel">Auslösepunkt</label>
+      <input type="range" id="thresh" min="20" max="95" step="5" value="50">
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button id="save" class="primary" disabled>Speichern</button>
+      <button id="defaults" disabled>Standard (WASD)</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Stick &amp; Kalibrierung</h2>
+    <div class="row">
+      <div class="stick"><div id="dot"></div></div>
+      <div class="grow">
+        <div id="live">–</div>
+        <button id="cal" style="margin-top:10px" disabled>Kalibrieren</button>
+      </div>
+    </div>
+    <p class="hint">Stick loslassen → „Kalibrieren“ → Stick mehrmals ganz außen im Kreis drehen → „Fertig“.</p>
+  </div>
+
+  <div class="card" id="steamCard">
+    <h2>Steam-Einrichtung (nur Controller-Modus)</h2>
+    <div class="pad" id="pad"></div>
+    <p class="hint">Den Knopf klicken, den Steam gerade verlangt. Nicht vorhandene Knöpfe einem freien (14–16) zuordnen.</p>
+  </div>
+</main>
+
+<script>
+const KEYS = {};
+for (const c of 'abcdefghijklmnopqrstuvwxyz') KEYS[c.toUpperCase()] = c.charCodeAt(0);
+for (const c of '0123456789') KEYS[c] = c.charCodeAt(0);
+Object.assign(KEYS, {
+  'Leertaste': 32, 'Shift links': 129, 'Shift rechts': 133, 'Strg links': 128, 'Strg rechts': 132,
+  'Alt links': 130, 'Tab': 179, 'Enter': 176, 'Esc': 177, 'Backspace': 178,
+  'Pfeil hoch': 218, 'Pfeil runter': 217, 'Pfeil links': 216, 'Pfeil rechts': 215,
+});
+for (let i = 1; i <= 12; i++) KEYS['F' + i] = 193 + i;
+const NAME_BY_CODE = Object.fromEntries(Object.entries(KEYS).map(([n, c]) => [c, n]));
+const SLOTS = ['Stick hoch', 'Stick runter', 'Stick links', 'Stick rechts', 'Stick-Klick'];
+const PAD = ['A', 'B', 'X', 'Y', 'LB', 'RB', 'LT', 'RT', 'Back', 'Start', 'L3', 'R3', 'Guide', '14', '15', '16',
+             'Stick ←', 'Stick →', 'Stick ↑', 'Stick ↓'];
+// 1209 = own "Jasp Stick" ID, 2341 = older Arduino firmware
+const FILTERS = [{ usbVendorId: 0x1209 }, { usbVendorId: 0x2341 }];
+
+const $ = (id) => document.getElementById(id);
+const selects = [], indicators = [];
+let port = null, reader = null, writer = null, rxBuffer = '', waiting = null, busy = Promise.resolve();
+let mode = null, pollTimer = null;
+
+for (let i = 0; i < 5; i++) {
+  const label = document.createElement('span'); label.textContent = SLOTS[i];
+  const sel = document.createElement('select');
+  for (const name of Object.keys(KEYS)) sel.add(new Option(name, KEYS[name]));
+  const ind = document.createElement('span'); ind.className = 'ind'; ind.textContent = '–';
+  $('keys').append(label, sel, ind); selects.push(sel); indicators.push(ind);
+}
+PAD.forEach((name, i) => {
+  const b = document.createElement('button'); b.textContent = name; b.disabled = true;
+  b.onclick = () => command('BTN ' + (i + 1));
+  $('pad').append(b);
+});
+
+function setStatus(text, ok) { $('status').textContent = text; $('status').className = (ok ? 'ok' : 'bad') + ' grow'; }
+function updateThreshLabel() { $('threshLabel').textContent = `Auslösepunkt: ${$('thresh').value} % Stickweg`; }
+$('thresh').oninput = updateThreshLabel; updateThreshLabel();
+
+// One command at a time: send a line, resolve with the next line the stick sends back.
+function command(text) {
+  const run = busy.then(() => new Promise(async (resolve) => {
+    if (!writer) return resolve(null);
+    const timer = setTimeout(() => { waiting = null; resolve(null); }, 1500);
+    waiting = (line) => { clearTimeout(timer); waiting = null; resolve(line); };
+    try { await writer.write(new TextEncoder().encode(text + '\n')); }
+    catch { clearTimeout(timer); waiting = null; resolve(null); }
+  }));
+  busy = run.catch(() => {});
+  return run;
+}
+
+async function readLoop() {
+  const decoder = new TextDecoder();
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      rxBuffer += decoder.decode(value);
+      let nl;
+      while ((nl = rxBuffer.indexOf('\n')) >= 0) {
+        const line = rxBuffer.slice(0, nl).trim();
+        rxBuffer = rxBuffer.slice(nl + 1);
+        if (line && waiting) waiting(line);
+      }
+    }
+  } catch { /* stick unplugged or rebooting */ }
+  if (port) disconnect('Verbindung getrennt');
+}
+
+async function connect() {
+  if (!('serial' in navigator)) return;
+  try {
+    const known = (await navigator.serial.getPorts()).filter((p) => FILTERS.some((f) => p.getInfo().usbVendorId === f.usbVendorId));
+    const target = known.length === 1 ? known[0] : await navigator.serial.requestPort({ filters: FILTERS });
+    await target.open({ baudRate: 115200 });
+    await target.setSignals({ dataTerminalReady: true });
+    port = target; reader = port.readable.getReader(); writer = port.writable.getWriter(); rxBuffer = '';
+    readLoop();
+    await new Promise((r) => setTimeout(r, 300));
+    setStatus('Verbunden', true);
+    $('connect').textContent = 'Trennen';
+    await loadConfig();
+    pollTimer = setInterval(poll, 150);
+  } catch (e) {
+    if (e.name !== 'NotFoundError') setStatus('Verbinden fehlgeschlagen – ist der Jasp-Mapper noch offen? (' + e.message + ')', false);
+    await disconnect();
+  }
+}
+
+async function disconnect(text) {
+  clearInterval(pollTimer); pollTimer = null;
+  const p = port; port = null;
+  try { reader && await reader.cancel(); } catch {}
+  try { reader && reader.releaseLock(); } catch {}
+  try { writer && writer.releaseLock(); } catch {}
+  reader = writer = null;
+  try { p && await p.close(); } catch {}
+  if (waiting) waiting(null);
+  setStatus(text || 'Nicht verbunden', false);
+  $('connect').textContent = 'Verbinden';
+  showMode(null);
+}
+
+async function loadConfig() {
+  const cfg = await command('GET');
+  const parts = (cfg || '').split(' ');
+  if (parts[0] === 'CFG' && parts.length >= 7) {
+    for (let i = 0; i < 5; i++) if (NAME_BY_CODE[parts[i + 1]]) selects[i].value = parts[i + 1];
+    $('thresh').value = parts[6]; updateThreshLabel();
+  }
+  const m = await command('MODE');
+  showMode(m && m.startsWith('MODE ') ? Number(m.slice(5)) : (port ? -1 : null));
+}
+
+function showMode(m) {
+  mode = m;
+  const connected = port !== null;
+  const keyboard = connected && m !== 1;
+  for (const el of [...selects, $('thresh'), $('save'), $('defaults')]) el.disabled = !keyboard;
+  $('cal').disabled = !connected;
+  $('pad').querySelectorAll('button').forEach((b) => (b.disabled = !(connected && m === 1)));
+  $('modeBtn').disabled = !(connected && (m === 0 || m === 1));
+  $('modeLabel').textContent = !connected ? '–' : m === 1 ? 'Controller (Gamepad)' : m === 0 ? 'Tastatur' : 'unbekannt (alte Firmware)';
+  $('modeBtn').textContent = m === 1 ? 'Zu Tastatur wechseln' : 'Zu Controller wechseln';
+}
+
+async function poll() {
+  const s = await command('STATE');
+  const p = (s || '').split(' ');
+  if (p[0] !== 'STATE' || p.length < 11) return;
+  const calibrating = p[5] === '1';
+  const x = Number(p[3]) / 32767, y = Number(p[4]) / 32767;
+  $('dot').style.left = (53 + x * 50) + 'px';
+  $('dot').style.top = (53 - y * 50) + 'px';
+  $('live').className = calibrating ? 'cal' : '';
+  $('live').textContent = calibrating
+    ? 'KALIBRIERUNG LÄUFT – Stick jetzt außen kreisen'
+    : `Roh X=${p[1]} Y=${p[2]} · Richtung X=${Math.round(x * 100)} % Y=${Math.round(y * 100)} %`;
+  $('cal').textContent = calibrating ? 'Fertig' : 'Kalibrieren';
+  for (let i = 0; i < 5; i++) {
+    const on = p[6 + i] === '1';
+    indicators[i].classList.toggle('on', on); indicators[i].textContent = on ? 'gedrückt' : '–';
+  }
+}
+
+$('connect').onclick = () => (port ? disconnect() : connect());
+$('save').onclick = async () => {
+  const reply = await command(`SET ${selects.map((s) => s.value).join(' ')} ${$('thresh').value}`);
+  setStatus(reply === 'OK' ? 'Gespeichert – bleibt auch nach dem Abstecken' : 'Speichern fehlgeschlagen', reply === 'OK');
+};
+$('defaults').onclick = async () => { await command('RESETKEYS'); await loadConfig(); setStatus('Standard wiederhergestellt', true); };
+$('cal').onclick = () => command('CAL');
+$('modeBtn').onclick = async () => {
+  await command('MODE ' + (mode === 1 ? 0 : 1));
+  await disconnect('Stick startet neu – gleich auf „Verbinden“ klicken');
+};
+
+if (!('serial' in navigator)) {
+  $('nosupport').hidden = false; $('connect').disabled = true;
+}
+navigator.serial?.addEventListener('disconnect', (e) => { if (e.target === port) disconnect('Stick abgesteckt'); });
+</script>
+</body>
+</html>
