@@ -78,7 +78,15 @@
     <h2 data-i18n="hMode"></h2>
     <div class="row">
       <span id="modeLabel" class="grow">–</span>
-      <button id="modeBtn" disabled></button>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button id="mode0" class="grow" disabled data-i18n="modeKeyboard"></button>
+      <button id="mode1" class="grow" disabled data-i18n="modeGamepad"></button>
+      <button id="mode2" class="grow" disabled data-i18n="modeMouse"></button>
+    </div>
+    <div id="speedBox" style="margin-top:12px" hidden>
+      <label for="speed" id="speedLabel"></label>
+      <input type="range" id="speed" min="1" max="20" step="1" value="8" disabled>
     </div>
     <p class="hint" data-i18n="modeHint"></p>
   </div>
@@ -159,9 +167,10 @@ const STR = {
     connect: 'Verbinden', disconnect: 'Trennen', notConnected: 'Nicht verbunden', connected: 'Verbunden',
     connectFailed: (m) => `Verbinden fehlgeschlagen – ist der Jasp-Mapper noch offen? (${m})`,
     connLost: 'Verbindung getrennt', unplugged: 'Stick abgesteckt',
-    hMode: 'Modus', modeHint: 'Tastatur: Spiele sehen nur Tasten (z.&nbsp;B. für Fortnite). Controller: Analog-Stick + Knopf, in Steam als Xbox-Controller nutzbar. Beim Umschalten startet der Stick neu – danach einmal neu verbinden.',
-    modeGamepad: 'Controller (Gamepad)', modeKeyboard: 'Tastatur', modeUnknown: 'unbekannt (alte Firmware)',
-    toKeyboard: 'Zu Tastatur wechseln', toGamepad: 'Zu Controller wechseln',
+    hMode: 'Modus', modeHint: 'Tastatur: Spiele sehen nur Tasten (z.&nbsp;B. für Fortnite). Controller: Analog-Stick + Knopf, in Steam als Xbox-Controller nutzbar. Maus: der Stick bewegt den Mauszeiger, Klick = linke Maustaste. Beim Umschalten startet der Stick neu – danach einmal neu verbinden.',
+    modeGamepad: 'Controller', modeKeyboard: 'Tastatur', modeMouse: 'Maus', modeUnknown: 'unbekannt (alte Firmware)',
+    modeNow: (m) => `Aktiver Modus: ${m}`,
+    speed: (v) => `Mausgeschwindigkeit: ${v} von 20`,
     rebooting: 'Stick startet neu – gleich auf „Verbinden“ klicken',
     hKeys: 'Tasten', slots: ['Stick hoch', 'Stick runter', 'Stick links', 'Stick rechts', 'Stick-Klick'],
     thresh: (v) => `Auslösepunkt: ${v} % Stickweg`, save: 'Speichern', defaults: 'Standard (WASD)',
@@ -231,9 +240,10 @@ const STR = {
     connect: 'Connect', disconnect: 'Disconnect', notConnected: 'Not connected', connected: 'Connected',
     connectFailed: (m) => `Connecting failed – is the desktop Jasp-Mapper still open? (${m})`,
     connLost: 'Connection lost', unplugged: 'Stick unplugged',
-    hMode: 'Mode', modeHint: 'Keyboard: games only see keys (e.g. for Fortnite). Controller: analog stick + button, usable as an Xbox controller through Steam. Switching restarts the stick – reconnect afterwards.',
-    modeGamepad: 'Controller (gamepad)', modeKeyboard: 'Keyboard', modeUnknown: 'unknown (old firmware)',
-    toKeyboard: 'Switch to keyboard', toGamepad: 'Switch to controller',
+    hMode: 'Mode', modeHint: 'Keyboard: games only see keys (e.g. for Fortnite). Controller: analog stick + button, usable as an Xbox controller through Steam. Mouse: the stick moves the pointer, click = left mouse button. Switching restarts the stick – reconnect afterwards.',
+    modeGamepad: 'Controller', modeKeyboard: 'Keyboard', modeMouse: 'Mouse', modeUnknown: 'unknown (old firmware)',
+    modeNow: (m) => `Active mode: ${m}`,
+    speed: (v) => `Mouse speed: ${v} of 20`,
     rebooting: 'Stick is restarting – click “Connect” in a moment',
     hKeys: 'Keys', slots: ['Stick up', 'Stick down', 'Stick left', 'Stick right', 'Stick click'],
     thresh: (v) => `Trigger point: ${v} % stick travel`, save: 'Save', defaults: 'Default (WASD)',
@@ -448,6 +458,8 @@ async function loadConfig() {
   const hasRot = !!rot && rot.startsWith('ROT ');
   if (hasRot) { $('rot').value = rot.slice(4); updateRotLabel(); }
   $('rot').disabled = $('rotReset').disabled = !hasRot;
+  const spd = await command('SPD');
+  if (spd && spd.startsWith('SPD ')) $('speed').value = spd.slice(4);
   const m = await command('MODE');
   showMode(m && m.startsWith('MODE ') ? Number(m.slice(5)) : (port ? -1 : null));
 }
@@ -455,16 +467,23 @@ async function loadConfig() {
 function showMode(m) {
   mode = m;
   const connected = port !== null;
-  const keyboard = connected && m !== 1;
+  const keyboard = connected && m === 0;
   for (const el of [...selects, $('thresh'), $('save'), $('defaults')]) el.disabled = !keyboard;
+  for (const i of [0, 1, 2]) {
+    const b = $('mode' + i);
+    b.disabled = !connected || m === i || m === null || m < 0;
+    b.className = 'grow' + (m === i ? ' primary' : '');
+  }
+  $('speedBox').hidden = m !== 2;
+  $('speed').disabled = !connected || m !== 2;
+  $('speedLabel').textContent = t('speed', $('speed').value);
   $('cal').disabled = !connected;
   $('diagBtn').disabled = !connected;
   $('fwUpdate').disabled = !connected;
   if (!connected) $('rot').disabled = $('rotReset').disabled = true;
   $('pad').querySelectorAll('button').forEach((b) => (b.disabled = !(connected && m === 1)));
-  $('modeBtn').disabled = !(connected && (m === 0 || m === 1));
-  $('modeLabel').textContent = !connected ? '–' : t(m === 1 ? 'modeGamepad' : m === 0 ? 'modeKeyboard' : 'modeUnknown');
-  $('modeBtn').textContent = t(m === 1 ? 'toKeyboard' : 'toGamepad');
+  $('modeLabel').textContent = !connected ? '–'
+    : t('modeNow', t(m === 1 ? 'modeGamepad' : m === 2 ? 'modeMouse' : m === 0 ? 'modeKeyboard' : 'modeUnknown'));
 }
 
 async function poll() {
@@ -491,10 +510,14 @@ $('save').onclick = async () => {
 };
 $('defaults').onclick = async () => { await command('RESETKEYS'); await loadConfig(); setStatus('restored', true); };
 $('cal').onclick = () => command('CAL');
-$('modeBtn').onclick = async () => {
-  await command('MODE ' + (mode === 1 ? 0 : 1));
-  await disconnect('rebooting');
-};
+for (const i of [0, 1, 2]) {
+  $('mode' + i).onclick = async () => {
+    await command('MODE ' + i);
+    await disconnect('rebooting');
+  };
+}
+$('speed').oninput = () => ($('speedLabel').textContent = t('speed', $('speed').value));
+$('speed').onchange = () => command('SPD ' + $('speed').value);
 
 // ---- Wiring check (firmware DIAG: raw A0..A3 + digital pins reading LOW) ----
 // Expected wiring: VRx -> A1, VRy -> A0, SW -> pin 14 or 16, plus VCC and GND.
