@@ -70,6 +70,8 @@
   #guide .head { fill: var(--muted); font: 600 12px "Segoe UI", system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; }
   #guide .sub { fill: var(--muted); font: 13px "Segoe UI", system-ui, sans-serif; }
   #guide .mid { text-anchor: middle; }
+  #guide .box { fill: none; stroke: var(--line); stroke-width: 1; }
+  #guide .usb { fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -106,43 +108,56 @@
 
   <div class="card">
     <h2 data-i18n="hGuide"></h2>
-    <svg id="guide" viewBox="0 0 520 290" role="img" aria-labelledby="guideTitle">
+    <svg id="guide" viewBox="0 0 520 330" role="img" aria-labelledby="guideTitle">
       <title id="guideTitle" data-i18n="hGuide"></title>
-      <circle cx="115" cy="140" r="84" class="ring"/>
-      <circle cx="115" cy="140" r="58" class="ring dashed"/>
-      <circle cx="115" cy="140" r="20" class="knob"/>
-      <g class="arrow">
-        <path d="M115 108 L115 70 M107 80 L115 68 L123 80"/>
-        <path d="M147 140 L185 140 M175 132 L187 140 L175 148"/>
-        <path d="M115 172 L115 210 M107 200 L115 212 L123 200"/>
-      </g>
-      <text x="115" y="58" class="lbl mid" data-i18n="gUp"></text>
-      <text x="197" y="145" class="lbl" data-i18n="gRight"></text>
-      <text x="115" y="232" class="lbl mid" data-i18n="gDown"></text>
-      <text x="115" y="258" class="sub mid" data-i18n="gHoldWhilePlug"></text>
 
-      <g transform="translate(250 30)">
-        <text x="0" y="0" class="head" data-i18n="gPressHead"></text>
-        <g transform="translate(0 20)">
+      <!-- Section 1: while plugging the USB cable in -->
+      <rect x="2" y="2" width="516" height="214" rx="10" class="box"/>
+      <g transform="translate(16 12)">
+        <path d="M6 14 h22 M28 8 v12 h10 v-12 z M12 8 l-6 6 l6 6 z" class="usb"/>
+        <text x="46" y="19" class="head" data-i18n="gPlugHead"></text>
+      </g>
+
+      <g transform="translate(0 20)">
+        <circle cx="118" cy="110" r="72" class="ring"/>
+        <circle cx="118" cy="110" r="48" class="ring dashed"/>
+        <circle cx="118" cy="110" r="18" class="knob"/>
+        <g class="arrow">
+          <path d="M118 84 L118 52 M111 61 L118 50 L125 61"/>
+          <path d="M144 110 L176 110 M167 103 L178 110 L167 117"/>
+          <path d="M118 136 L118 168 M111 159 L118 170 L125 159"/>
+        </g>
+        <text x="118" y="42" class="lbl mid" data-i18n="gUp"></text>
+        <text x="186" y="115" class="lbl" data-i18n="gRight"></text>
+        <text x="118" y="190" class="lbl mid" data-i18n="gDown"></text>
+        <text x="118" y="206" class="sub mid" data-i18n="gHoldWhilePlug"></text>
+      </g>
+
+      <g transform="translate(250 56)">
+        <g>
           <circle cx="12" cy="10" r="11" class="knob"/>
           <text x="36" y="8" class="lbl" data-i18n="gTapTitle"></text>
           <text x="36" y="26" class="sub" data-i18n="gTapText"></text>
         </g>
-        <g transform="translate(0 76)">
+        <g transform="translate(0 56)">
           <circle cx="12" cy="10" r="11" class="knob warnfill"/>
           <text x="36" y="8" class="lbl" data-i18n="gHoldTitle"></text>
           <text x="36" y="26" class="sub" data-i18n="gHoldText"></text>
         </g>
-        <g transform="translate(0 132)">
-          <circle cx="12" cy="10" r="11" class="knob"/>
-          <text x="36" y="8" class="lbl" data-i18n="gBootTitle"></text>
-          <text x="36" y="26" class="sub" data-i18n="gBootText"></text>
-        </g>
-        <g transform="translate(0 188)">
-          <circle cx="12" cy="10" r="11" class="knob"/>
-          <text x="36" y="8" class="lbl" data-i18n="gMouseTitle"></text>
-          <text x="36" y="26" class="sub" data-i18n="gMouseText"></text>
-        </g>
+      </g>
+
+      <!-- Section 2: while the stick is running -->
+      <rect x="2" y="228" width="516" height="98" rx="10" class="box"/>
+      <text x="18" y="252" class="head" data-i18n="gRunHead"></text>
+      <g transform="translate(18 266)">
+        <circle cx="12" cy="10" r="11" class="knob"/>
+        <text x="36" y="8" class="lbl" data-i18n="gClickTitle"></text>
+        <text x="36" y="26" class="sub" data-i18n="gClickText"></text>
+      </g>
+      <g transform="translate(268 266)">
+        <circle cx="12" cy="10" r="11" class="knob"/>
+        <text x="36" y="8" class="lbl" data-i18n="gMouseTitle"></text>
+        <text x="36" y="26" class="sub" data-i18n="gMouseText"></text>
       </g>
     </svg>
   </div>
@@ -240,11 +255,12 @@ const STR = {
     rebooting: 'Stick startet neu – gleich auf „Verbinden“ klicken',
     hGuide: 'Stick-Gesten auf einen Blick',
     gUp: 'Tastatur', gRight: 'Controller', gDown: 'Maus',
-    gHoldWhilePlug: 'Richtung beim Einstecken halten',
-    gPressHead: 'Stick drücken',
-    gTapTitle: 'Kurz beim Einstecken', gTapText: 'schaltet zum nächsten Modus',
-    gHoldTitle: '3 Sekunden beim Einstecken', gHoldText: 'öffnet den Bootloader',
-    gBootTitle: 'Im Betrieb kurz drücken', gBootText: 'belegte Taste bzw. Linksklick',
+    gHoldWhilePlug: 'Richtung halten, bis er sich meldet',
+    gPlugHead: 'Beim Einstecken des USB-Kabels: Stick so halten',
+    gRunHead: 'Während der Stick läuft',
+    gClickTitle: 'Stick kurz drücken', gClickText: 'löst die belegte Taste aus',
+    gTapTitle: 'Stick kurz drücken', gTapText: 'schaltet zum nächsten Modus weiter',
+    gHoldTitle: 'Stick 3 Sekunden halten', gHoldText: 'öffnet den Bootloader zum Flashen',
     gMouseTitle: 'Im Maus-Modus halten', gMouseText: 'Rechtsklick, solange gehalten',
     hKeys: 'Tasten', slots: ['Stick hoch', 'Stick runter', 'Stick links', 'Stick rechts', 'Stick-Klick'],
     thresh: (v) => `Auslösepunkt: ${v} % Stickweg`, save: 'Speichern', defaults: 'Standard (WASD)',
@@ -331,11 +347,12 @@ const STR = {
     rebooting: 'Stick is restarting – click “Connect” in a moment',
     hGuide: 'Stick gestures at a glance',
     gUp: 'Keyboard', gRight: 'Controller', gDown: 'Mouse',
-    gHoldWhilePlug: 'Hold a direction while plugging in',
-    gPressHead: 'Pressing the stick',
-    gTapTitle: 'Tap while plugging in', gTapText: 'switches to the next mode',
-    gHoldTitle: 'Hold 3 seconds while plugging in', gHoldText: 'opens the bootloader for flashing',
-    gBootTitle: 'Tap while running', gBootText: 'mapped key, or left click',
+    gHoldWhilePlug: 'Hold the direction until it shows up',
+    gPlugHead: 'While plugging the USB cable in, hold the stick like this',
+    gRunHead: 'While the stick is running',
+    gClickTitle: 'Tap the stick', gClickText: 'triggers the mapped key',
+    gTapTitle: 'Tap the stick', gTapText: 'switches to the next mode',
+    gHoldTitle: 'Hold the stick for 3 seconds', gHoldText: 'opens the bootloader for flashing',
     gMouseTitle: 'Hold in mouse mode', gMouseText: 'right click while held',
     hKeys: 'Keys', slots: ['Stick up', 'Stick down', 'Stick left', 'Stick right', 'Stick click'],
     thresh: (v) => `Trigger point: ${v} % stick travel`, save: 'Save', defaults: 'Default (WASD)',
