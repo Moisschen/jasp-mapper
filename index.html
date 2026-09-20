@@ -139,6 +139,10 @@
       <button id="fwUpdate" class="primary" disabled data-i18n="fwUpdate"></button>
       <span class="hint grow" style="margin:0" data-i18n="fwUpdateHint"></span>
     </div>
+    <div class="row" style="margin-top:10px">
+      <button id="fwXinput" disabled data-i18n="fwXinput"></button>
+      <span class="hint grow" style="margin:0" data-i18n="fwXinputHint"></span>
+    </div>
     <p class="hint" data-i18n="fwManual"></p>
     <ol class="steps">
       <li><button id="fwReset" data-i18n="fwReset"></button>
@@ -210,6 +214,10 @@ const STR = {
     dSummaryBad: (n) => `${n} Problem(e) gefunden:`, dSummaryOk: 'Alles richtig verdrahtet.',
     dAborted: (m) => 'Check abgebrochen: ' + m,
     hFw: 'Neuen Stick einrichten / Firmware aktualisieren', fwUpdate: 'Firmware aktualisieren',
+    fwXinput: 'Als Xbox-Controller flashen',
+    fwXinputHint: 'Echter XInput-Controller, auch ohne Steam erkannt. Danach kein Mapper mehr: zum Zurückwechseln den Stick gedrückt halten, einstecken und „Firmware aktualisieren“ klicken.',
+    fwXinputConfirm: 'Danach ist der Stick ein Xbox-Controller und lässt sich nicht mehr einstellen.\n\nZurück geht es so: Stick abziehen, Stick-Klick gedrückt halten, einstecken und hier auf „Firmware aktualisieren“ klicken.\n\nJetzt flashen?',
+    fwXinputDone: 'Fertig – der Stick ist jetzt ein Xbox-Controller. Zum Zurückwechseln: abziehen, Klick halten, einstecken, dann „Firmware aktualisieren“.',
     fwUpdateHint: 'Für einen verbundenen Stick – ein Klick, Einstellungen bleiben erhalten.',
     fwManual: 'Neuer Stick oder Update klappt nicht? Dann manuell (Arduino-Bootloader nötig – bei gekauften Pro Micros ist der drauf):',
     fwReset: '1. Stick neu starten',
@@ -223,6 +231,7 @@ const STR = {
     fwLoadFailed: (m) => 'Firmware konnte nicht geladen werden: ' + m,
     fwErasing: 'Lösche…', fwWriting: (p) => `Schreibe… ${p} %`, fwVerifying: 'Prüfe…',
     fwDone: (n) => `Fertig – ${n} Bytes aufgespielt und geprüft. In ein paar Sekunden oben auf „Verbinden“ und einmal kalibrieren.`,
+
     fwNoDevice: 'Kein Gerät gewählt.',
     fwFailed: (m) => `Fehlgeschlagen: ${m}. Zu spät gewählt? Dann Schritt 1 wiederholen bzw. RST zweimal an GND tippen.`,
     eChecksum: 'Firmware-Datei beschädigt (Prüfsumme)', eTooBig: 'Firmware zu groß für den Bootloader-Bereich',
@@ -283,6 +292,10 @@ const STR = {
     dSummaryBad: (n) => `${n} problem(s) found:`, dSummaryOk: 'Everything is wired correctly.',
     dAborted: (m) => 'Check aborted: ' + m,
     hFw: 'Set up a new stick / update firmware', fwUpdate: 'Update firmware',
+    fwXinput: 'Flash as Xbox controller',
+    fwXinputHint: 'A real XInput controller, recognised without Steam too. No mapper after that: to come back, hold the stick click, plug it in and click “Update firmware”.',
+    fwXinputConfirm: 'After this the stick is an Xbox controller and can no longer be configured.\n\nTo come back: unplug it, hold the stick click, plug it in and click “Update firmware” here.\n\nFlash now?',
+    fwXinputDone: 'Done – the stick is an Xbox controller now. To come back: unplug, hold the click, plug in, then “Update firmware”.',
     fwUpdateHint: 'For a connected stick – one click, settings are kept.',
     fwManual: 'New stick, or the update doesn’t work? Do it manually (needs the Arduino bootloader – bought Pro Micros have it):',
     fwReset: '1. Restart stick',
@@ -479,7 +492,7 @@ function showMode(m) {
   $('speedLabel').textContent = t('speed', $('speed').value);
   $('cal').disabled = !connected;
   $('diagBtn').disabled = !connected;
-  $('fwUpdate').disabled = !connected;
+  $('fwUpdate').disabled = $('fwXinput').disabled = !connected;
   if (!connected) $('rot').disabled = $('rotReset').disabled = true;
   $('pad').querySelectorAll('button').forEach((b) => (b.disabled = !(connected && m === 1)));
   $('modeLabel').textContent = !connected ? '–'
@@ -704,7 +717,7 @@ const isBootloader = (p) => BOOTLOADER_IDS.some(([v, d]) => p.getInfo().usbVendo
 
 // One click: reset the connected stick into its bootloader, then flash. A bootloader port that
 // was allowed before is picked up automatically; otherwise the browser asks once.
-$('fwUpdate').onclick = async () => {
+async function resetAndFlash(hexFile, doneKey) {
   const running = port;
   if (!running) return;
   await disconnect('fwUpdating');
@@ -722,14 +735,20 @@ $('fwUpdate').onclick = async () => {
     }
     fwStatus('fwPick');
     return navigator.serial.requestPort();
-  });
+  }, hexFile, doneKey);
+}
+
+$('fwUpdate').onclick = () => resetAndFlash();
+// XInput has no serial port, so this is a one-way trip until the click-at-boot escape hatch is used.
+$('fwXinput').onclick = () => {
+  if (confirm(t('fwXinputConfirm'))) resetAndFlash('firmware-xinput.hex', 'fwXinputDone');
 };
 
-async function flashFirmware(pickPort) {
+async function flashFirmware(pickPort, hexFile = 'firmware.hex', doneKey = 'fwDone') {
   if (port) await disconnect();
   let image;
   try {
-    image = parseHex(await (await fetch('firmware.hex', { cache: 'no-store' })).text());
+    image = parseHex(await (await fetch(hexFile, { cache: 'no-store' })).text());
   } catch (e) { return fwStatus('fwLoadFailed', 'bad', e.message); }
 
   let target, rd, wr;
@@ -770,7 +789,7 @@ async function flashFirmware(pickPort) {
     }
 
     await send([0x45]); await expectCR('stepExit');  // 'E' leave bootloader, start firmware
-    fwStatus('fwDone', 'ok', image.length);
+    fwStatus(doneKey, 'ok', image.length);
   } catch (e) {
     if (e.name === 'NotFoundError') fwStatus('fwNoDevice', 'bad');
     else fwStatus('fwFailed', 'bad', e.message);
