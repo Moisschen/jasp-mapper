@@ -52,7 +52,8 @@
   .steps li { display: grid; gap: 4px; justify-items: start; }
   .steps .hint { margin: 0; }
   progress { width: 100%; height: 10px; margin-top: 4px; accent-color: var(--accent); }
-  #fwStatus.ok { color: var(--ok); font-weight: 600; } #fwStatus.bad { color: var(--bad); font-weight: 600; }
+  #fwStatus.ok, #fwVersions.ok { color: var(--ok); font-weight: 600; }
+  #fwStatus.bad, #fwVersions.bad { color: var(--bad); font-weight: 600; }
   .diag { margin: 10px 0 0; padding-left: 20px; }
   .diag li { margin: 4px 0; }
   .diag .ok { color: var(--ok); } .diag .bad { color: var(--bad); } .diag .warn { color: var(--warn); }
@@ -139,6 +140,7 @@
       <button id="fwUpdate" class="primary" disabled data-i18n="fwUpdate"></button>
       <span class="hint grow" style="margin:0" data-i18n="fwUpdateHint"></span>
     </div>
+    <div id="fwVersions" class="hint"></div>
     <div class="row" style="margin-top:10px">
       <button id="fwXinput" disabled data-i18n="fwXinput"></button>
       <span class="hint grow" style="margin:0" data-i18n="fwXinputHint"></span>
@@ -215,6 +217,8 @@ const STR = {
     dAborted: (m) => 'Check abgebrochen: ' + m,
     hFw: 'Neuen Stick einrichten / Firmware aktualisieren', fwUpdate: 'Firmware aktualisieren',
     fwXinput: 'Als Xbox-Controller flashen',
+    verLine: (have, latest) => `Aufgespielt: ${have} · Neueste: ${latest}`,
+    verOld: ' – Update verfügbar', verCurrent: ' – aktuell', verUnknown: 'Aufgespielt: unbekannt (alte Firmware)',
     fwXinputHint: 'Echter XInput-Controller, auch ohne Steam erkannt. Danach kein Mapper mehr: zum Zurückwechseln Stick-Klick gedrückt halten, einstecken und unten „2. Firmware aufspielen“ klicken.',
     fwXinputConfirm: 'Danach ist der Stick ein Xbox-Controller und lässt sich nicht mehr einstellen.\n\nZurück geht es so: Stick abziehen, Stick-Klick gedrückt halten, einstecken, dann unten „2. Firmware aufspielen“ klicken und den Stick innerhalb von 8 Sekunden im Fenster auswählen.\n\nJetzt flashen?',
     fwXinputDone: 'Fertig – der Stick ist jetzt ein Xbox-Controller. Zurück: abziehen, Stick-Klick halten, einstecken, dann unten „2. Firmware aufspielen“ und den Stick binnen 8 Sekunden auswählen.',
@@ -293,6 +297,8 @@ const STR = {
     dAborted: (m) => 'Check aborted: ' + m,
     hFw: 'Set up a new stick / update firmware', fwUpdate: 'Update firmware',
     fwXinput: 'Flash as Xbox controller',
+    verLine: (have, latest) => `Installed: ${have} · Latest: ${latest}`,
+    verOld: ' – update available', verCurrent: ' – up to date', verUnknown: 'Installed: unknown (old firmware)',
     fwXinputHint: 'A real XInput controller, recognised without Steam too. No mapper after that: to come back, hold the stick click, plug it in and click “2. Flash firmware” below.',
     fwXinputConfirm: 'After this the stick is an Xbox controller and can no longer be configured.\n\nTo come back: unplug it, hold the stick click, plug it in, click “2. Flash firmware” below and pick the stick in the dialog within 8 seconds.\n\nFlash now?',
     fwXinputDone: 'Done – the stick is an Xbox controller now. To come back: unplug, hold the stick click, plug in, then “2. Flash firmware” below and pick the stick within 8 seconds.',
@@ -387,6 +393,7 @@ function applyLanguage() {
   $('cal').textContent = t('cal');
   setStatus(statusMsg[0], statusMsg[2], ...statusMsg[1]);
   if (fwMsg) fwStatus(...fwMsg);
+  showVersions();
   if (diagContinue === null && !$('diagResult').children.length) $('diagStep').textContent = t('diagIntro');
 }
 $('langBtn').onclick = () => {
@@ -471,6 +478,9 @@ async function loadConfig() {
   const hasRot = !!rot && rot.startsWith('ROT ');
   if (hasRot) { $('rot').value = rot.slice(4); updateRotLabel(); }
   $('rot').disabled = $('rotReset').disabled = !hasRot;
+  const ver = await command('VER');
+  deviceVersion = ver && ver.startsWith('VER ') ? ver.slice(4).trim() : null;
+  showVersions();
   const spd = await command('SPD');
   if (spd && spd.startsWith('SPD ')) $('speed').value = spd.slice(4);
   const m = await command('MODE');
@@ -493,6 +503,8 @@ function showMode(m) {
   $('cal').disabled = !connected;
   $('diagBtn').disabled = !connected;
   $('fwUpdate').disabled = $('fwXinput').disabled = !connected;
+  if (!connected) deviceVersion = null;
+  showVersions();
   if (!connected) $('rot').disabled = $('rotReset').disabled = true;
   $('pad').querySelectorAll('button').forEach((b) => (b.disabled = !(connected && m === 1)));
   $('modeLabel').textContent = !connected ? '–'
@@ -531,6 +543,23 @@ for (const i of [0, 1, 2]) {
 }
 $('speed').oninput = () => ($('speedLabel').textContent = t('speed', $('speed').value));
 $('speed').onchange = () => command('SPD ' + $('speed').value);
+
+// ---- Firmware version: what is on the stick vs. what is published here ----
+let deviceVersion = null, latestVersion = null;
+fetch('firmware-version.txt', { cache: 'no-store' })
+  .then((r) => (r.ok ? r.text() : null))
+  .then((v) => { latestVersion = v && v.trim(); showVersions(); })
+  .catch(() => {});
+
+function showVersions() {
+  const box = $('fwVersions');
+  if (!port) { box.textContent = ''; box.className = 'hint'; return; }
+  if (!deviceVersion) { box.textContent = t('verUnknown'); box.className = 'hint bad'; return; }
+  const same = latestVersion && deviceVersion === latestVersion;
+  box.textContent = t('verLine', deviceVersion, latestVersion || '?')
+    + (latestVersion ? t(same ? 'verCurrent' : 'verOld') : '');
+  box.className = 'hint ' + (latestVersion ? (same ? 'ok' : 'bad') : '');
+}
 
 // ---- Wiring check (firmware DIAG: raw A0..A3 + digital pins reading LOW) ----
 // Expected wiring: VRx -> A1, VRy -> A0, SW -> pin 14 or 16, plus VCC and GND.
